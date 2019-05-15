@@ -16,42 +16,7 @@
 package wares
 
 import (
-	"github.com/wojnosystems/vsql"
 	"github.com/wojnosystems/vsql_engine/context"
 )
 
-type RollbackWare func(c context.Contexter, b vsql.Transactioner) vsql.Transactioner
-
-// Middleware for begin
-type RollbackAdder interface {
-	Add(w RollbackWare)
-}
-type RollbackApplyer interface {
-	Apply(vsql.Transactioner) vsql.Transactioner
-}
-
-type Rollbacker interface {
-	RollbackMiddleware() RollbackAdder
-}
-
-type Rollback struct {
-	RollbackAdder
-	RollbackApplyer
-	base
-}
-
-func NewRollback() *Rollback {
-	return &Rollback{
-		base: *newBase(),
-	}
-}
-
-func (b *Rollback) Add(w RollbackWare) {
-	b.base.Add(w)
-}
-
-func (b *Rollback) Apply(in vsql.Transactioner, ctx context.Contexter) vsql.Transactioner {
-	return b.ApplyBase(ctx, in, func(ctx context.Contexter, theMiddleware interface{}, sqlObject interface{}) (sqlObjectOut interface{}) {
-		return theMiddleware.(RollbackWare)(ctx, sqlObject.(vsql.Transactioner))
-	}).(vsql.Transactioner)
-}
+type GlobalWare func(c context.Contexter)

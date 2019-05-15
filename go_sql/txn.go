@@ -18,7 +18,6 @@ package go_sql
 import (
 	"context"
 	"database/sql"
-	"github.com/wojnosystems/vsql"
 	"github.com/wojnosystems/vsql/param"
 	"github.com/wojnosystems/vsql/vresult"
 	"github.com/wojnosystems/vsql/vrows"
@@ -26,7 +25,6 @@ import (
 )
 
 type goSqlTx struct {
-	vsql.QueryExecTransactioner
 	queryEngineFactory *engineQuery
 	tx                 *sql.Tx
 }

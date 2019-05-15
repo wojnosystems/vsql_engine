@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/vsql_engine.iml" filepath="$PROJECT_DIR$/.idea/vsql_engine.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../vsql_middleware/.idea/vsql_middleware.iml" filepath="$PROJECT_DIR$/../vsql_middleware/.idea/vsql_middleware.iml" />
     </modules>
   </component>
 </project>

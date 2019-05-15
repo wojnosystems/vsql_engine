@@ -44,7 +44,7 @@ func (b *base) ApplyBase(ctx context.Contexter,
 		// return
 		sqlObjectOut interface{})) (sqlObjectOut interface{}) {
 	if len(b.middlewares) == 0 {
-		return nil
+		return sqlObject
 	}
 	if ctx == nil {
 		ctx = context.New()

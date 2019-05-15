@@ -30,7 +30,7 @@ type StatementCloseApplyer interface {
 	Apply(vstmt.Statementer) vstmt.Statementer
 }
 
-type StatementCloseter interface {
+type StatementCloser interface {
 	StatementCloseMiddleware() StatementCloseAdder
 }
 

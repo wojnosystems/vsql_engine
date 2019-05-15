@@ -72,6 +72,10 @@ func (m *engineQuery) CopyContext() *engineQuery {
 	return rc
 }
 
+func (m *engineQuery) GlobalAdd(ware wares.GlobalWare) {
+	ware(m.ctx)
+}
+
 // StatementMiddleware provides a way to add items to the Statement Middleware
 func (m *engineQuery) StatementMiddleware() wares.StatementAdder {
 	return m.StatementWares

@@ -38,6 +38,10 @@ type SQLEngineQueryer interface {
 	wares.Rower
 	wares.Resulter
 	wares.InsertResulter
+	wares.StatementCloser
+	wares.Committer
+	wares.Rollbacker
+
+	// GlobalAdd adds a global middleware
+	GlobalAdd(ware wares.GlobalWare)
 }
-
-
