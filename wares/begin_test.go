@@ -18,40 +18,18 @@ package wares
 import (
 	"github.com/wojnosystems/vsql"
 	"github.com/wojnosystems/vsql_engine/context"
+	"testing"
 )
 
-type BeginWare func(c context.Contexter, b vsql.QueryExecTransactioner) vsql.QueryExecTransactioner
-
-// Middleware for begin
-type BeginAdder interface {
-	Add(w BeginWare)
-}
-type BeginApplyer interface {
-	Apply(context.Contexter, vsql.QueryExecTransactioner) vsql.QueryExecTransactioner
-}
-
-type Beginner interface {
-	BeginMiddleware() BeginAdder
-}
-
-type Begin struct {
-	BeginAdder
-	BeginApplyer
-	base
-}
-
-func NewBegin() *Begin {
-	return &Begin{
-		base: *newBase(),
+func TestBegin_Apply(t *testing.T) {
+	didRun := false
+	b := NewBegin()
+	b.Add(func(c context.Contexter, b vsql.QueryExecTransactioner) vsql.QueryExecTransactioner {
+		didRun = true
+		return b
+	})
+	b.Apply(&vsql.QueryExecTransactionerMock{}, context.New())
+	if !didRun {
+		t.Error("Did not run")
 	}
-}
-
-func (b *Begin) Add(w BeginWare) {
-	b.base.Add(w)
-}
-
-func (b *Begin) Apply(in vsql.QueryExecTransactioner, ctx context.Contexter) vsql.QueryExecTransactioner {
-	return b.ApplyBase(ctx, in, func(ctx context.Contexter, theMiddleware interface{}, sqlObject interface{}) (sqlObjectOut interface{}) {
-		return theMiddleware.(BeginWare)(ctx, sqlObject.(vsql.QueryExecTransactioner))
-	}).(vsql.QueryExecTransactioner)
 }

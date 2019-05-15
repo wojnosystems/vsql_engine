@@ -22,6 +22,7 @@ import (
 	"github.com/wojnosystems/vsql/vresult"
 	"github.com/wojnosystems/vsql/vrows"
 	"github.com/wojnosystems/vsql/vstmt"
+	vsql_context "github.com/wojnosystems/vsql_engine/context"
 	"github.com/wojnosystems/vsql_engine/strategy"
 	"github.com/wojnosystems/vsql_engine/wares"
 )
@@ -33,7 +34,11 @@ type engineQuery struct {
 	RowWares             *wares.Row
 	ResultWares          *wares.Result
 	InsertResultWares    *wares.InsertResult
+	CommitWares          *wares.Commit
+	RollbackWares        *wares.Rollback
+	StatementCloseWares  *wares.StatementClose
 	interpolationFactory strategy.InterpolationFactory
+	ctx                  vsql_context.Contexter
 }
 
 func newEngineQuery(db *sql.DB, interpolationFactory strategy.InterpolationFactory) *engineQuery {
@@ -44,29 +49,67 @@ func newEngineQuery(db *sql.DB, interpolationFactory strategy.InterpolationFacto
 		RowWares:             wares.NewRow(),
 		ResultWares:          wares.NewResult(),
 		InsertResultWares:    wares.NewInsertResult(),
+		CommitWares:          wares.NewCommit(),
+		RollbackWares:        wares.NewRollback(),
+		StatementCloseWares:  wares.NewStatementClose(),
 		interpolationFactory: interpolationFactory,
+		ctx:                  vsql_context.New(),
 	}
+}
+
+// CopyContext returns a copy of engineQuery with the same middlewares, but a cloned version of the context
+func (m *engineQuery) CopyContext() *engineQuery {
+	rc := newEngineQuery(m.db, m.interpolationFactory)
+	rc.StatementWares = m.StatementWares
+	rc.RowsWares = m.RowsWares
+	rc.RowWares = m.RowWares
+	rc.ResultWares = m.ResultWares
+	rc.InsertResultWares = m.InsertResultWares
+	rc.CommitWares = m.CommitWares
+	rc.RollbackWares = m.RollbackWares
+	rc.StatementCloseWares = m.StatementCloseWares
+	rc.ctx = m.ctx.Copy()
+	return rc
 }
 
 // StatementMiddleware provides a way to add items to the Statement Middleware
 func (m *engineQuery) StatementMiddleware() wares.StatementAdder {
 	return m.StatementWares
 }
+
 // RowsMiddleware provides a way to add items to the RowsMiddleware
 func (m *engineQuery) RowsMiddleware() wares.RowsAdder {
 	return m.RowsWares
 }
+
 // RowMiddleware provides a way to add items to the RowMiddleware
 func (m *engineQuery) RowMiddleware() wares.RowAdder {
 	return m.RowWares
 }
+
 // ResultMiddleware provides a way to add items to the ResultMiddleware
 func (m *engineQuery) ResultMiddleware() wares.ResultAdder {
 	return m.ResultWares
 }
+
 // InsertResultMiddleware provides a way to add items to the InsertResultMiddleware
 func (m *engineQuery) InsertResultMiddleware() wares.InsertResultAdder {
 	return m.InsertResultWares
+}
+
+// StatementCloseMiddleware provides a way to add items to the StatementCloseWares
+func (m *engineQuery) StatementCloseMiddleware() wares.StatementCloseAdder {
+	return m.StatementCloseWares
+}
+
+// CommitMiddleware provides a way to add items to the CommitWares
+func (m *engineQuery) CommitMiddleware() wares.CommitAdder {
+	return m.CommitWares
+}
+
+// RollbackMiddleware provides a way to add items to the RollbackWares
+func (m *engineQuery) RollbackMiddleware() wares.RollbackAdder {
+	return m.RollbackWares
 }
 
 // Ping see github.com/wojnosystems/vsql/pinger/pinger.go#Pinger
@@ -85,7 +128,7 @@ func (m *engineQuery) Query(ctx context.Context, query param.Queryer) (rRows vro
 	}
 	r.SqlRows, err = m.db.QueryContext(ctx, q, ps...)
 	if err != nil {
-		m.RowsWares.Apply(r)
+		m.RowsWares.Apply(r, m.ctx)
 	}
 	return r, err
 }
@@ -99,7 +142,7 @@ func (m *engineQuery) Insert(ctx context.Context, query param.Queryer) (res vres
 	r := &goSqlQueryInsertResult{}
 	r.sqlResult, err = m.db.ExecContext(ctx, q, ps...)
 	if err != nil {
-		m.InsertResultWares.Apply(r)
+		m.InsertResultWares.Apply(r, m.ctx)
 	}
 	return r, err
 }
@@ -113,7 +156,7 @@ func (m *engineQuery) Exec(ctx context.Context, query param.Queryer) (res vresul
 	r := &goSqlQueryResult{}
 	r.sqlResult, err = m.db.ExecContext(ctx, q, ps...)
 	if err != nil {
-		m.ResultWares.Apply(r)
+		m.ResultWares.Apply(r, m.ctx)
 	}
 	return r, err
 }
@@ -122,11 +165,11 @@ func (m *engineQuery) Exec(ctx context.Context, query param.Queryer) (res vresul
 func (m *engineQuery) Prepare(ctx context.Context, query param.Queryer) (stmtr vstmt.Statementer, err error) {
 	q := query.SQLQuery(m.interpolationFactory())
 	r := &goSqlStatement{
-		queryEngineFactory: m,
+		queryEngineFactory: m.CopyContext(),
 	}
 	r.stmt, err = m.db.PrepareContext(ctx, q)
 	if err != nil {
-		m.StatementWares.Apply(r)
+		m.StatementWares.Apply(r, r.queryEngineFactory.ctx)
 	}
 	return r, err
 }

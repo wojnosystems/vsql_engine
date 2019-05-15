@@ -15,44 +15,70 @@
 
 package key_value
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
+// KeyValuer is thread-safe
 type KeyValuer interface {
 	Set(key string, value interface{})
 	Get(key string) (v interface{}, ok bool)
 	Del(key string)
 	MustGet(key string) (v interface{})
+	// Copy creates a shallow clone of this KeyValuer so that it may be used in nested transactions in isolation
+	Copy() KeyValuer
 }
 
 // InvocationContext is a key-value store for persisting keyValue throughout a middleware invocation chain
 type keyValue struct {
+	mu     *sync.RWMutex
 	values map[string]interface{}
 }
 
-func New() KeyValuer {
+func New() *keyValue {
 	return &keyValue{
 		values: make(map[string]interface{}),
+		mu:     &sync.RWMutex{},
 	}
 }
 
 func (c *keyValue) Set(key string, value interface{}) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.values[key] = value
 }
 
 func (c *keyValue) Get(key string) (v interface{}, ok bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	v, ok = c.values[key]
 	return
 }
 
 func (c *keyValue) Del(key string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	delete(c.values, key)
 }
 
 func (c *keyValue) MustGet(key string) (v interface{}) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	var ok bool
 	v, ok = c.values[key]
 	if !ok {
 		panic(fmt.Errorf(`"%s" was not found`, key))
 	}
 	return
+}
+
+func (c *keyValue) Copy() KeyValuer {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	rc := New()
+	for key, value := range c.values {
+		rc.values[key] = value
+	}
+	return rc
 }

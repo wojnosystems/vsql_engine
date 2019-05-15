@@ -16,42 +16,43 @@
 package wares
 
 import (
-	"github.com/wojnosystems/vsql"
 	"github.com/wojnosystems/vsql_engine/context"
 )
 
-type BeginWare func(c context.Contexter, b vsql.QueryExecTransactioner) vsql.QueryExecTransactioner
-
-// Middleware for begin
-type BeginAdder interface {
-	Add(w BeginWare)
-}
-type BeginApplyer interface {
-	Apply(context.Contexter, vsql.QueryExecTransactioner) vsql.QueryExecTransactioner
+type base struct {
+	// middlewares is an array of function pointers
+	middlewares []interface{}
 }
 
-type Beginner interface {
-	BeginMiddleware() BeginAdder
-}
-
-type Begin struct {
-	BeginAdder
-	BeginApplyer
-	base
-}
-
-func NewBegin() *Begin {
-	return &Begin{
-		base: *newBase(),
+func newBase() *base {
+	return &base{
+		middlewares: make([]interface{}, 0),
 	}
 }
 
-func (b *Begin) Add(w BeginWare) {
-	b.base.Add(w)
+// Add a middleware to the execution stack. Will be called after the type is created
+func (b *base) Add(theMiddleware interface{}) {
+	b.middlewares = append(b.middlewares, theMiddleware)
 }
 
-func (b *Begin) Apply(in vsql.QueryExecTransactioner, ctx context.Contexter) vsql.QueryExecTransactioner {
-	return b.ApplyBase(ctx, in, func(ctx context.Contexter, theMiddleware interface{}, sqlObject interface{}) (sqlObjectOut interface{}) {
-		return theMiddleware.(BeginWare)(ctx, sqlObject.(vsql.QueryExecTransactioner))
-	}).(vsql.QueryExecTransactioner)
+func (b *base) ApplyBase(ctx context.Contexter,
+	sqlObject interface{},
+	// descendent runs this method
+	descendentRun func(ctx context.Contexter,
+		theMiddleware interface{},
+		sqlObject interface{}) (
+		// return
+		sqlObjectOut interface{})) (sqlObjectOut interface{}) {
+	if len(b.middlewares) == 0 {
+		return nil
+	}
+	if ctx == nil {
+		ctx = context.New()
+	}
+	for _, m := range b.middlewares {
+		if !ctx.IsAborted() {
+			sqlObject = descendentRun(ctx, m, sqlObject)
+		}
+	}
+	return sqlObject
 }

@@ -31,13 +31,22 @@ type goSqlTx struct {
 	tx                 *sql.Tx
 }
 
+func (m *goSqlTx) CopyContext() *goSqlTx {
+	return &goSqlTx{
+		queryEngineFactory: m.queryEngineFactory.CopyContext(),
+		tx:                 m.tx,
+	}
+}
+
 // Commit see github.com/wojnosystems/vsql/transactions.go#Transactioner
 func (m *goSqlTx) Commit() error {
+	m.queryEngineFactory.CommitWares.Apply(m, m.queryEngineFactory.ctx)
 	return m.tx.Commit()
 }
 
 // Rollback see github.com/wojnosystems/vsql/transactions.go#Transactioner
 func (m *goSqlTx) Rollback() error {
+	m.queryEngineFactory.RollbackWares.Apply(m, m.queryEngineFactory.ctx)
 	return m.tx.Rollback()
 }
 
@@ -54,7 +63,7 @@ func (m *goSqlTx) Query(ctx context.Context, query param.Queryer) (rRows vrows.R
 	}
 	r.SqlRows, err = m.tx.QueryContext(ctx, q, ps...)
 	if err != nil {
-		m.queryEngineFactory.RowsWares.Apply(r)
+		m.queryEngineFactory.RowsWares.Apply(r, m.queryEngineFactory.ctx)
 	}
 	return r, err
 }
@@ -70,7 +79,7 @@ func (m *goSqlTx) Insert(ctx context.Context, query param.Queryer) (res vresult.
 	}
 	r.sqlResult, err = m.tx.ExecContext(ctx, q, ps...)
 	if err != nil {
-		m.queryEngineFactory.InsertResultWares.Apply(r)
+		m.queryEngineFactory.InsertResultWares.Apply(r, m.queryEngineFactory.ctx)
 	}
 	return r, err
 }
@@ -86,7 +95,7 @@ func (m *goSqlTx) Exec(ctx context.Context, query param.Queryer) (res vresult.Re
 	}
 	r.sqlResult, err = m.tx.ExecContext(ctx, q, ps...)
 	if err != nil {
-		m.queryEngineFactory.ResultWares.Apply(r)
+		m.queryEngineFactory.ResultWares.Apply(r, m.queryEngineFactory.ctx)
 	}
 	return r, err
 }
@@ -96,11 +105,11 @@ func (m *goSqlTx) Prepare(ctx context.Context, query param.Queryer) (stmtr vstmt
 	q := query.SQLQuery(m.queryEngineFactory.interpolationFactory())
 	r := &goSqlTxStatement{
 		queryEngineFactory: m.queryEngineFactory,
-		tx: m.tx,
+		tx:                 m.tx,
 	}
 	r.stmt, err = m.tx.PrepareContext(ctx, q)
 	if err != nil {
-		m.queryEngineFactory.StatementWares.Apply(r)
+		m.queryEngineFactory.StatementWares.Apply(r, m.queryEngineFactory.ctx)
 	}
 	return r, err
 }

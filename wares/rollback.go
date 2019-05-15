@@ -20,38 +20,38 @@ import (
 	"github.com/wojnosystems/vsql_engine/context"
 )
 
-type BeginWare func(c context.Contexter, b vsql.QueryExecTransactioner) vsql.QueryExecTransactioner
+type RollbackWare func(c context.Contexter, b vsql.Transactioner) vsql.Transactioner
 
 // Middleware for begin
-type BeginAdder interface {
-	Add(w BeginWare)
+type RollbackAdder interface {
+	Add(w RollbackWare)
 }
-type BeginApplyer interface {
-	Apply(context.Contexter, vsql.QueryExecTransactioner) vsql.QueryExecTransactioner
-}
-
-type Beginner interface {
-	BeginMiddleware() BeginAdder
+type RollbackApplyer interface {
+	Apply(vsql.Transactioner) vsql.Transactioner
 }
 
-type Begin struct {
-	BeginAdder
-	BeginApplyer
+type Rollbackter interface {
+	RollbackMiddleware() RollbackAdder
+}
+
+type Rollback struct {
+	RollbackAdder
+	RollbackApplyer
 	base
 }
 
-func NewBegin() *Begin {
-	return &Begin{
+func NewRollback() *Rollback {
+	return &Rollback{
 		base: *newBase(),
 	}
 }
 
-func (b *Begin) Add(w BeginWare) {
+func (b *Rollback) Add(w RollbackWare) {
 	b.base.Add(w)
 }
 
-func (b *Begin) Apply(in vsql.QueryExecTransactioner, ctx context.Contexter) vsql.QueryExecTransactioner {
+func (b *Rollback) Apply(in vsql.Transactioner, ctx context.Contexter) vsql.Transactioner {
 	return b.ApplyBase(ctx, in, func(ctx context.Contexter, theMiddleware interface{}, sqlObject interface{}) (sqlObjectOut interface{}) {
-		return theMiddleware.(BeginWare)(ctx, sqlObject.(vsql.QueryExecTransactioner))
-	}).(vsql.QueryExecTransactioner)
+		return theMiddleware.(RollbackWare)(ctx, sqlObject.(vsql.Transactioner))
+	}).(vsql.Transactioner)
 }

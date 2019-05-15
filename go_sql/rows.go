@@ -30,7 +30,7 @@ type goSqlRows struct {
 func (m *goSqlRows) Next() vrows.Rower {
 	if m.SqlRows.Next() {
 		r := &goSqlRow{SqlRows: m.SqlRows}
-		m.queryEngineFactory.RowWares.Apply(r)
+		m.queryEngineFactory.RowWares.Apply(r, m.queryEngineFactory.ctx)
 		return r
 	}
 	return nil

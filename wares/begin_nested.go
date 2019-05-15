@@ -20,29 +20,38 @@ import (
 	"github.com/wojnosystems/vsql_engine/context"
 )
 
+type BeginNestedWare func(c context.Contexter, b vsql.QueryExecNestedTransactioner) vsql.QueryExecNestedTransactioner
+
+// Middleware for begin
+type BeginNestedAdder interface {
+	Add(w BeginNestedWare)
+}
+type BeginNestedApplyer interface {
+	Apply(context.Contexter, vsql.QueryExecNestedTransactioner) vsql.QueryExecNestedTransactioner
+}
+
+type BeginNester interface {
+	BeginMiddleware() BeginNestedAdder
+}
+
 type BeginNested struct {
 	BeginNestedAdder
 	BeginNestedApplyer
-	middlewares []BeginNestedWare
+	base
 }
 
 func NewBeginNested() *BeginNested {
-	return &BeginNested {
-		middlewares: make([]BeginNestedWare, 0),
+	return &BeginNested{
+		base: *newBase(),
 	}
 }
 
 func (b *BeginNested) Add(w BeginNestedWare) {
-	b.middlewares = append(b.middlewares, w)
+	b.base.Add(w)
 }
 
-func (b *BeginNested) Apply(in vsql.QueryExecNestedTransactioner) vsql.QueryExecNestedTransactioner {
-	if len(b.middlewares) == 0 {
-		return in
-	}
-	ctx := context.New()
-	for _, m := range b.middlewares {
-		in = m(ctx, in)
-	}
-	return in
+func (b *BeginNested) Apply(in vsql.QueryExecNestedTransactioner, ctx context.Contexter) vsql.QueryExecNestedTransactioner {
+	return b.ApplyBase(ctx, in, func(ctx context.Contexter, theMiddleware interface{}, sqlObject interface{}) (sqlObjectOut interface{}) {
+		return theMiddleware.(BeginNestedWare)(ctx, sqlObject.(vsql.QueryExecNestedTransactioner))
+	}).(vsql.QueryExecNestedTransactioner)
 }

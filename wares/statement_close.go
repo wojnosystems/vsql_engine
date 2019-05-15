@@ -16,42 +16,42 @@
 package wares
 
 import (
-	"github.com/wojnosystems/vsql"
+	"github.com/wojnosystems/vsql/vstmt"
 	"github.com/wojnosystems/vsql_engine/context"
 )
 
-type BeginWare func(c context.Contexter, b vsql.QueryExecTransactioner) vsql.QueryExecTransactioner
+type StatementCloseWare func(c context.Contexter, b vstmt.Statementer) vstmt.Statementer
 
 // Middleware for begin
-type BeginAdder interface {
-	Add(w BeginWare)
+type StatementCloseAdder interface {
+	Add(w StatementCloseWare)
 }
-type BeginApplyer interface {
-	Apply(context.Contexter, vsql.QueryExecTransactioner) vsql.QueryExecTransactioner
-}
-
-type Beginner interface {
-	BeginMiddleware() BeginAdder
+type StatementCloseApplyer interface {
+	Apply(vstmt.Statementer) vstmt.Statementer
 }
 
-type Begin struct {
-	BeginAdder
-	BeginApplyer
+type StatementCloseter interface {
+	StatementCloseMiddleware() StatementCloseAdder
+}
+
+type StatementClose struct {
+	StatementCloseAdder
+	StatementCloseApplyer
 	base
 }
 
-func NewBegin() *Begin {
-	return &Begin{
+func NewStatementClose() *StatementClose {
+	return &StatementClose{
 		base: *newBase(),
 	}
 }
 
-func (b *Begin) Add(w BeginWare) {
+func (b *StatementClose) Add(w StatementCloseWare) {
 	b.base.Add(w)
 }
 
-func (b *Begin) Apply(in vsql.QueryExecTransactioner, ctx context.Contexter) vsql.QueryExecTransactioner {
+func (b *StatementClose) Apply(in vstmt.Statementer, ctx context.Contexter) vstmt.Statementer {
 	return b.ApplyBase(ctx, in, func(ctx context.Contexter, theMiddleware interface{}, sqlObject interface{}) (sqlObjectOut interface{}) {
-		return theMiddleware.(BeginWare)(ctx, sqlObject.(vsql.QueryExecTransactioner))
-	}).(vsql.QueryExecTransactioner)
+		return theMiddleware.(StatementCloseWare)(ctx, sqlObject.(vstmt.Statementer))
+	}).(vstmt.Statementer)
 }

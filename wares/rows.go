@@ -20,32 +20,37 @@ import (
 	"github.com/wojnosystems/vsql_engine/context"
 )
 
+type RowsWare func(c context.Contexter, b vrows.Rowser) vrows.Rowser
+
+type RowsAdder interface {
+	Add(w RowsWare)
+}
+type RowsApplyer interface {
+	Apply(contexter context.Contexter, r vrows.Rowser) vrows.Rowser
+}
+
+type Rowser interface {
+	RowsMiddleware() RowsAdder
+}
+
 type Rows struct {
-	RowAdder
-	RowApplyer
-	middlewares []RowsWare
+	RowsAdder
+	RowsApplyer
+	base
 }
 
 func NewRows() *Rows {
-	return &Rows {
-		middlewares: make([]RowsWare, 0),
+	return &Rows{
+		base: *newBase(),
 	}
 }
 
 func (b *Rows) Add(w RowsWare) {
-	if b.middlewares == nil {
-		b.middlewares = make([]RowsWare, 0)
-	}
-	b.middlewares = append(b.middlewares, w)
+	b.base.Add(w)
 }
 
-func (b *Rows) Apply(in vrows.Rowser) vrows.Rowser {
-	if len(b.middlewares) == 0 {
-		return in
-	}
-	ctx := context.New()
-	for _, m := range b.middlewares {
-		in = m(ctx, in)
-	}
-	return in
+func (b *Rows) Apply(in vrows.Rowser, ctx context.Contexter) vrows.Rowser {
+	return b.ApplyBase(ctx, in, func(ctx context.Contexter, theMiddleware interface{}, sqlObject interface{}) (sqlObjectOut interface{}) {
+		return theMiddleware.(RowsWare)(ctx, sqlObject.(vrows.Rowser))
+	}).(vrows.Rowser)
 }

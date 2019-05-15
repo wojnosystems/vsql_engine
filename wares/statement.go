@@ -20,32 +20,37 @@ import (
 	"github.com/wojnosystems/vsql_engine/context"
 )
 
+type StatementWare func(c context.Contexter, b vstmt.Statementer) vstmt.Statementer
+
+type StatementAdder interface {
+	Add(w StatementWare)
+}
+type StatementApplyer interface {
+	Apply(ctx context.Contexter, s vstmt.Statementer) vstmt.Statementer
+}
+
+type Statementer interface {
+	StatementMiddleware() StatementAdder
+}
+
 type Statement struct {
 	StatementAdder
 	StatementApplyer
-	middlewares []StatementWare
+	base
 }
 
 func NewStatement() *Statement {
-	return &Statement {
-		middlewares: make([]StatementWare, 0),
+	return &Statement{
+		base: *newBase(),
 	}
 }
 
 func (b *Statement) Add(w StatementWare) {
-	if b.middlewares == nil {
-		b.middlewares = make([]StatementWare, 0)
-	}
-	b.middlewares = append(b.middlewares, w)
+	b.base.Add(w)
 }
 
-func (b *Statement) Apply(in vstmt.Statementer) vstmt.Statementer {
-	if len(b.middlewares) == 0 {
-		return in
-	}
-	ctx := context.New()
-	for _, m := range b.middlewares {
-		in = m(ctx, in)
-	}
-	return in
+func (b *Statement) Apply(in vstmt.Statementer, ctx context.Contexter) vstmt.Statementer {
+	return b.ApplyBase(ctx, in, func(ctx context.Contexter, theMiddleware interface{}, sqlObject interface{}) (sqlObjectOut interface{}) {
+		return theMiddleware.(StatementWare)(ctx, sqlObject.(vstmt.Statementer))
+	}).(vstmt.Statementer)
 }

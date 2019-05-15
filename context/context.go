@@ -19,6 +19,10 @@ import "github.com/wojnosystems/vsql_engine/key_value"
 
 type Contexter interface {
 	KeyValues() key_value.KeyValuer
+	IsAborted() bool
+	Abort()
+	Next()
+	Copy() Contexter
 }
 
 type context struct {
@@ -26,7 +30,7 @@ type context struct {
 	isAborted bool
 }
 
-func New() Contexter {
+func New() *context {
 	return &context{
 		kvo: key_value.New(),
 	}
@@ -34,4 +38,21 @@ func New() Contexter {
 
 func (c *context) KeyValues() key_value.KeyValuer {
 	return c.kvo
+}
+
+func (c context) IsAborted() bool {
+	return c.isAborted
+}
+
+func (c *context) Abort() {
+	c.isAborted = true
+}
+
+func (c *context) Next() {
+}
+
+func (c *context) Copy() Contexter {
+	rc := New()
+	rc.kvo = c.kvo.Copy()
+	return rc
 }

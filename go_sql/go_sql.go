@@ -57,11 +57,11 @@ func (m *goSql) Begin(ctx context.Context, txOp vtxn.TxOptioner) (n vsql.QueryEx
 		txo = txOp.ToTxOptions()
 	}
 	r := &goSqlTx{
-		queryEngineFactory: m.engineQuery,
+		queryEngineFactory: m.CopyContext(),
 	}
 	r.tx, err = m.db.BeginTx(ctx, txo)
 	if err != nil {
-		m.beginEngineFactory.Apply(r)
+		m.beginEngineFactory.Apply(r, r.queryEngineFactory.ctx)
 	}
 	return r, nil
 }

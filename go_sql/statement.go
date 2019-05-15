@@ -28,7 +28,7 @@ import (
 type goSqlStatement struct {
 	vstmt.Statementer
 	queryEngineFactory *engineQuery
-	stmt *sql.Stmt
+	stmt               *sql.Stmt
 }
 
 // Query see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
@@ -43,7 +43,7 @@ func (m *goSqlStatement) Query(ctx context.Context, query param.Parameterer) (rR
 	}
 	r.SqlRows, err = m.stmt.QueryContext(ctx, ps...)
 	if err != nil {
-		m.queryEngineFactory.RowsWares.Apply(r)
+		m.queryEngineFactory.RowsWares.Apply(r, m.queryEngineFactory.ctx)
 	}
 	return r, err
 }
@@ -58,7 +58,7 @@ func (m *goSqlStatement) Insert(ctx context.Context, query param.Parameterer) (r
 	}
 	r.sqlResult, err = m.stmt.ExecContext(ctx, ps...)
 	if err != nil {
-		m.queryEngineFactory.InsertResultWares.Apply(r)
+		m.queryEngineFactory.InsertResultWares.Apply(r, m.queryEngineFactory.ctx)
 	}
 	return r, err
 }
@@ -73,13 +73,13 @@ func (m *goSqlStatement) Exec(ctx context.Context, query param.Parameterer) (res
 	}
 	r.sqlResult, err = m.stmt.ExecContext(ctx, ps...)
 	if err != nil {
-		m.queryEngineFactory.ResultWares.Apply(r)
+		m.queryEngineFactory.ResultWares.Apply(r, m.queryEngineFactory.ctx.Copy())
 	}
 	return r, err
 }
 
 // Close see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
 func (m *goSqlStatement) Close() error {
+	m.queryEngineFactory.StatementCloseWares.Apply(m, m.queryEngineFactory.ctx)
 	return m.stmt.Close()
 }
-

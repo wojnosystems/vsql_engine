@@ -15,43 +15,15 @@
 
 package wares
 
-import (
-	"github.com/wojnosystems/vsql"
-	"github.com/wojnosystems/vsql_engine/context"
-)
-
-type BeginWare func(c context.Contexter, b vsql.QueryExecTransactioner) vsql.QueryExecTransactioner
-
-// Middleware for begin
-type BeginAdder interface {
-	Add(w BeginWare)
-}
-type BeginApplyer interface {
-	Apply(context.Contexter, vsql.QueryExecTransactioner) vsql.QueryExecTransactioner
-}
-
-type Beginner interface {
-	BeginMiddleware() BeginAdder
-}
-
-type Begin struct {
-	BeginAdder
-	BeginApplyer
-	base
-}
-
-func NewBegin() *Begin {
-	return &Begin{
-		base: *newBase(),
-	}
-}
-
-func (b *Begin) Add(w BeginWare) {
-	b.base.Add(w)
-}
-
-func (b *Begin) Apply(in vsql.QueryExecTransactioner, ctx context.Contexter) vsql.QueryExecTransactioner {
-	return b.ApplyBase(ctx, in, func(ctx context.Contexter, theMiddleware interface{}, sqlObject interface{}) (sqlObjectOut interface{}) {
-		return theMiddleware.(BeginWare)(ctx, sqlObject.(vsql.QueryExecTransactioner))
-	}).(vsql.QueryExecTransactioner)
-}
+// wares are the middlewares that are permitted to be appended to for the vsql_engine.
+// You can add middleware when each of the following actions occurs:
+//  * Begin transaction
+//  * BeginNested (beginning nested transaction)
+//  * Transaction Rolledback
+//  * Transaction Committed
+//  * Statement is created
+//  * Statement is closed
+//  * Rows a record set is created
+//  * Row a single row is created
+//  * Result a single result is created
+//  * InsertResult a single result regarding an insert is created

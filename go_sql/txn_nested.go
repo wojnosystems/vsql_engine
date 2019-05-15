@@ -26,7 +26,7 @@ import (
 //vsql.QueryExecNestedTransactioner
 type goSqlNestedTx struct {
 	*goSqlTx
-	beginEngineFactory   *wares.BeginNested
+	beginEngineFactory *wares.BeginNested
 }
 
 // Begin see github.com/wojnosystems/vsql/transactions.go#TransactionStarter
@@ -36,12 +36,12 @@ func (m *goSqlNestedTx) Begin(ctx context.Context, txOp vtxn.TxOptioner) (n vsql
 		txo = txOp.ToTxOptions()
 	}
 	r := &goSqlNestedTx{
-		goSqlTx: m.goSqlTx,
+		goSqlTx:            m.goSqlTx.CopyContext(),
 		beginEngineFactory: m.beginEngineFactory,
 	}
 	r.tx, err = m.queryEngineFactory.db.BeginTx(ctx, txo)
 	if err != nil {
-		m.beginEngineFactory.Apply(r)
+		m.beginEngineFactory.Apply(r, r.queryEngineFactory.ctx)
 	}
 	return r, nil
 }

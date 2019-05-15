@@ -58,7 +58,7 @@ func (m *goSqlTxStatement) Insert(ctx context.Context, query param.Parameterer) 
 	}
 	r.sqlResult, err = m.tx.StmtContext(ctx, m.stmt).ExecContext(ctx, ps...)
 	if err != nil {
-		m.queryEngineFactory.InsertResultWares.Apply(r)
+		m.queryEngineFactory.InsertResultWares.Apply(r, m.queryEngineFactory.ctx)
 	}
 	return r, err
 }
@@ -73,7 +73,7 @@ func (m *goSqlTxStatement) Exec(ctx context.Context, query param.Parameterer) (r
 	}
 	r.sqlResult, err = m.tx.StmtContext(ctx, m.stmt).ExecContext(ctx, ps...)
 	if err != nil {
-		m.queryEngineFactory.ResultWares.Apply(r)
+		m.queryEngineFactory.ResultWares.Apply(r, m.queryEngineFactory.ctx)
 	}
 	return r, err
 }

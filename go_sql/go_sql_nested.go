@@ -27,7 +27,7 @@ import (
 // SQLNestedEnginer
 type goSqlNested struct {
 	*engineQuery
-	beginEngineFactory   *wares.BeginNested
+	beginEngineFactory *wares.BeginNested
 }
 
 func NewNested(interpolationFactory strategy.InterpolationFactory, driverFactory func() (db *sql.DB)) SQLNestedEnginer {
@@ -55,13 +55,13 @@ func (m *goSqlNested) Begin(ctx context.Context, txOp vtxn.TxOptioner) (n vsql.Q
 	}
 	r := &goSqlNestedTx{
 		goSqlTx: &goSqlTx{
-			queryEngineFactory: m.engineQuery,
+			queryEngineFactory: m.engineQuery.CopyContext(),
 		},
 		beginEngineFactory: m.beginEngineFactory,
 	}
 	r.tx, err = m.db.BeginTx(ctx, txo)
 	if err != nil {
-		m.beginEngineFactory.Apply(r)
+		m.beginEngineFactory.Apply(r, r.queryEngineFactory.ctx)
 	}
 	return r, nil
 }
