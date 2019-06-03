@@ -21,39 +21,39 @@ import (
 	"github.com/wojnosystems/vsql_engine/vsql_context"
 )
 
-type RollbackHandler func(ctx context.Context, c vsql_context.Beginner)
+type RowsCloseHandler func(ctx context.Context, c vsql_context.Rowser)
 
 // Middleware for begin
-type RollbackAdder interface {
-	Append(w RollbackHandler)
-	Prepend(w RollbackHandler)
+type RowsCloseAdder interface {
+	Append(w RowsCloseHandler)
+	Prepend(w RowsCloseHandler)
 }
 
-type RollbackWare interface {
-	RollbackMW() RollbackAdder
+type RowsCloseWare interface {
+	RowsCloseMW() RowsCloseAdder
 }
 
-type RollbackMW struct {
-	RollbackAdder
+type RowsCloseMW struct {
+	RowsCloseAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 
-func NewRollbackMW() *RollbackMW {
-	return &RollbackMW{
+func NewRowsCloseMW() *RowsCloseMW {
+	return &RowsCloseMW{
 		middlewares: list.New(),
 	}
 }
 
-func (b *RollbackMW) Append(w RollbackHandler) {
-	b.middlewares.PushBack(rollbackPackageFunc(w))
+func (b *RowsCloseMW) Append(w RowsCloseHandler) {
+	b.middlewares.PushBack(rowsClosePackageFunc(w))
 }
 
-func (b *RollbackMW) Prepend(w RollbackHandler) {
-	b.middlewares.PushFront(rollbackPackageFunc(w))
+func (b *RowsCloseMW) Prepend(w RowsCloseHandler) {
+	b.middlewares.PushFront(rowsClosePackageFunc(w))
 }
 
 // PerformMiddleware executes the middleware after injecting vsql_context (if any)
-func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Beginner) {
+func (b *RowsCloseMW) PerformMiddleware(ctx context.Context, c vsql_context.Rowser) {
 	if b.middlewares.Len() == 0 {
 		return
 	}
@@ -61,14 +61,14 @@ func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Begin
 	c.Next(ctx)
 }
 
-func (b RollbackMW) Copy() *RollbackMW {
-	r := NewRollbackMW()
+func (b RowsCloseMW) Copy() *RowsCloseMW {
+	r := NewRowsCloseMW()
 	r.middlewares.PushBackList(b.middlewares)
 	return r
 }
 
-func rollbackPackageFunc(w RollbackHandler) vsql_context.MiddlewareFunc {
+func rowsClosePackageFunc(w RowsCloseHandler) vsql_context.MiddlewareFunc {
 	return func(ctx context.Context, er vsql_context.Er) {
-		w(ctx, er.(vsql_context.Beginner))
+		w(ctx, er.(vsql_context.Rowser))
 	}
 }

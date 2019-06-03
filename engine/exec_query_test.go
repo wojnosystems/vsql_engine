@@ -13,62 +13,32 @@
 // OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-package wares
+package engine
 
 import (
-	"container/list"
 	"context"
+	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vresult"
 	"github.com/wojnosystems/vsql_engine/vsql_context"
+	"testing"
 )
 
-type BeginHandler func(ctx context.Context, c vsql_context.Beginner)
-
-// Middleware for begin
-type BeginAdder interface {
-	Append(w BeginHandler)
-	Prepend(w BeginHandler)
-}
-
-type BeginWare interface {
-	BeginMW() BeginAdder
-}
-
-type BeginMW struct {
-	BeginAdder
-	middlewares *list.List // vsql_context.BeginWareType
-}
-
-func NewBeginMW() *BeginMW {
-	return &BeginMW{
-		middlewares: list.New(),
+func TestEngine_ExecQuery(t *testing.T) {
+	expectedResult := &vresult.ResulterMock{}
+	expectedParams := param.New("SELECT * FROM puppies")
+	var actualParams param.Queryer
+	engine := New()
+	engine.ExecQueryMW().Append(func(ctx context.Context, c vsql_context.Execer) {
+		actualParams = c.Query()
+		c.SetResult(expectedResult)
+		c.Next(ctx)
+	})
+	actualResult, _ := engine.Exec(context.Background(), expectedParams)
+	if actualParams != expectedParams {
+		t.Error("expected parameters to be passed")
 	}
-}
 
-func (b *BeginMW) Append(w BeginHandler) {
-	b.middlewares.PushBack(beginPackageFunc(w))
-}
-
-func (b *BeginMW) Prepend(w BeginHandler) {
-	b.middlewares.PushFront(beginPackageFunc(w))
-}
-
-// PerformMiddleware executes the middleware after injecting vsql_context (if any)
-func (b *BeginMW) PerformMiddleware(ctx context.Context, c vsql_context.Beginner) {
-	if b.middlewares.Len() == 0 {
-		return
-	}
-	c.(vsql_context.WithMiddlewarer).SetMiddlewares(b.middlewares)
-	c.Next(ctx)
-}
-
-func (b BeginMW) Copy() *BeginMW {
-	r := NewBeginMW()
-	r.middlewares.PushBackList(b.middlewares)
-	return r
-}
-
-func beginPackageFunc(w BeginHandler) vsql_context.MiddlewareFunc {
-	return func(ctx context.Context, er vsql_context.Er) {
-		w(ctx, er.(vsql_context.Beginner))
+	if actualResult != expectedResult {
+		t.Error("expected the actual result to be the one we set")
 	}
 }

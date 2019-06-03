@@ -24,6 +24,13 @@ import (
 type KeyValuer interface {
 	Set(key string, value interface{})
 	Get(key string) (v interface{}, ok bool)
+	// CheckAndSet will set the value if and only if the setIfTrue returns true.
+	// @param key the string key that identifies the record
+	// @param value is the new value to set, if the setIfTrue returns true
+	// @param setIfTrue is the test method that returns true if the set should occur, or false if it should not. This function takes in 3 params:
+	//   0 @param currentValue is the value that is currently in the map
+	//   1 @param ok is true if original is found in the map, false if not
+	CheckAndSet(key string, value interface{}, setIfTrue func(currentValue interface{}, ok bool) bool)
 	Del(key string)
 	MustGet(key string) (v interface{})
 	// Copy creates a shallow clone of this KeyValuer so that it may be used in nested transactions in isolation
@@ -56,6 +63,16 @@ func (c *keyValue) Get(key string) (v interface{}, ok bool) {
 	return
 }
 
+func (c *keyValue) CheckAndSet(key string, value interface{}, setIfTrue func(currentValue interface{}, ok bool) bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	v, ok := c.values[key]
+	if setIfTrue(v, ok) {
+		c.values[key] = value
+	}
+	return
+}
+
 func (c *keyValue) Del(key string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -74,8 +91,8 @@ func (c *keyValue) MustGet(key string) (v interface{}) {
 }
 
 func (c *keyValue) Copy() KeyValuer {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	rc := New()
 	for key, value := range c.values {
 		rc.values[key] = value

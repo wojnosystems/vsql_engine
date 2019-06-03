@@ -21,39 +21,39 @@ import (
 	"github.com/wojnosystems/vsql_engine/vsql_context"
 )
 
-type RollbackHandler func(ctx context.Context, c vsql_context.Beginner)
+type RowsNextHandler func(ctx context.Context, c vsql_context.Rowser)
 
 // Middleware for begin
-type RollbackAdder interface {
-	Append(w RollbackHandler)
-	Prepend(w RollbackHandler)
+type RowsNextAdder interface {
+	Append(w RowsNextHandler)
+	Prepend(w RowsNextHandler)
 }
 
-type RollbackWare interface {
-	RollbackMW() RollbackAdder
+type RowsNextWare interface {
+	RowsNextMW() RowsNextAdder
 }
 
-type RollbackMW struct {
-	RollbackAdder
+type RowsNextMW struct {
+	RowsNextAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 
-func NewRollbackMW() *RollbackMW {
-	return &RollbackMW{
+func NewRowsNextMW() *RowsNextMW {
+	return &RowsNextMW{
 		middlewares: list.New(),
 	}
 }
 
-func (b *RollbackMW) Append(w RollbackHandler) {
-	b.middlewares.PushBack(rollbackPackageFunc(w))
+func (b *RowsNextMW) Append(w RowsNextHandler) {
+	b.middlewares.PushBack(rowsNextPackageFunc(w))
 }
 
-func (b *RollbackMW) Prepend(w RollbackHandler) {
-	b.middlewares.PushFront(rollbackPackageFunc(w))
+func (b *RowsNextMW) Prepend(w RowsNextHandler) {
+	b.middlewares.PushFront(rowsNextPackageFunc(w))
 }
 
 // PerformMiddleware executes the middleware after injecting vsql_context (if any)
-func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Beginner) {
+func (b *RowsNextMW) PerformMiddleware(ctx context.Context, c vsql_context.Rowser) {
 	if b.middlewares.Len() == 0 {
 		return
 	}
@@ -61,14 +61,14 @@ func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Begin
 	c.Next(ctx)
 }
 
-func (b RollbackMW) Copy() *RollbackMW {
-	r := NewRollbackMW()
+func (b RowsNextMW) Copy() *RowsNextMW {
+	r := NewRowsNextMW()
 	r.middlewares.PushBackList(b.middlewares)
 	return r
 }
 
-func rollbackPackageFunc(w RollbackHandler) vsql_context.MiddlewareFunc {
+func rowsNextPackageFunc(w RowsNextHandler) vsql_context.MiddlewareFunc {
 	return func(ctx context.Context, er vsql_context.Er) {
-		w(ctx, er.(vsql_context.Beginner))
+		w(ctx, er.(vsql_context.Rowser))
 	}
 }

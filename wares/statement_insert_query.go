@@ -21,39 +21,39 @@ import (
 	"github.com/wojnosystems/vsql_engine/vsql_context"
 )
 
-type RollbackHandler func(ctx context.Context, c vsql_context.Beginner)
+type StatementInsertQueryHandler func(ctx context.Context, c vsql_context.StatementInsertQueryer)
 
 // Middleware for begin
-type RollbackAdder interface {
-	Append(w RollbackHandler)
-	Prepend(w RollbackHandler)
+type StatementInsertQueryAdder interface {
+	Append(w StatementInsertQueryHandler)
+	Prepend(w StatementInsertQueryHandler)
 }
 
-type RollbackWare interface {
-	RollbackMW() RollbackAdder
+type StatementInsertQueryWare interface {
+	StatementInsertQueryMW() StatementInsertQueryAdder
 }
 
-type RollbackMW struct {
-	RollbackAdder
-	middlewares *list.List // vsql_context.MiddlewareFunc
+type StatementInsertQueryMW struct {
+	StatementInsertQueryAdder
+	middlewares *list.List // StatementInsertQueryHandler
 }
 
-func NewRollbackMW() *RollbackMW {
-	return &RollbackMW{
+func NewStatementInsertQueryMW() *StatementInsertQueryMW {
+	return &StatementInsertQueryMW{
 		middlewares: list.New(),
 	}
 }
 
-func (b *RollbackMW) Append(w RollbackHandler) {
-	b.middlewares.PushBack(rollbackPackageFunc(w))
+func (b *StatementInsertQueryMW) Append(w StatementInsertQueryHandler) {
+	b.middlewares.PushBack(statementInsertQueryPackageFunc(w))
 }
 
-func (b *RollbackMW) Prepend(w RollbackHandler) {
-	b.middlewares.PushFront(rollbackPackageFunc(w))
+func (b *StatementInsertQueryMW) Prepend(w StatementInsertQueryHandler) {
+	b.middlewares.PushFront(statementInsertQueryPackageFunc(w))
 }
 
 // PerformMiddleware executes the middleware after injecting vsql_context (if any)
-func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Beginner) {
+func (b *StatementInsertQueryMW) PerformMiddleware(ctx context.Context, c vsql_context.StatementInsertQueryer) {
 	if b.middlewares.Len() == 0 {
 		return
 	}
@@ -61,14 +61,14 @@ func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Begin
 	c.Next(ctx)
 }
 
-func (b RollbackMW) Copy() *RollbackMW {
-	r := NewRollbackMW()
+func (b StatementInsertQueryMW) Copy() *StatementInsertQueryMW {
+	r := NewStatementInsertQueryMW()
 	r.middlewares.PushBackList(b.middlewares)
 	return r
 }
 
-func rollbackPackageFunc(w RollbackHandler) vsql_context.MiddlewareFunc {
+func statementInsertQueryPackageFunc(w StatementInsertQueryHandler) vsql_context.MiddlewareFunc {
 	return func(ctx context.Context, er vsql_context.Er) {
-		w(ctx, er.(vsql_context.Beginner))
+		w(ctx, er.(vsql_context.StatementInsertQueryer))
 	}
 }

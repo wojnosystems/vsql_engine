@@ -21,39 +21,39 @@ import (
 	"github.com/wojnosystems/vsql_engine/vsql_context"
 )
 
-type RollbackHandler func(ctx context.Context, c vsql_context.Beginner)
+type PrepareHandler func(ctx context.Context, c vsql_context.Preparer)
 
 // Middleware for begin
-type RollbackAdder interface {
-	Append(w RollbackHandler)
-	Prepend(w RollbackHandler)
+type StatementPrepareAdder interface {
+	Append(w PrepareHandler)
+	Prepend(w PrepareHandler)
 }
 
-type RollbackWare interface {
-	RollbackMW() RollbackAdder
+type StatementPrepareWare interface {
+	PrepareMW() StatementPrepareAdder
 }
 
-type RollbackMW struct {
-	RollbackAdder
+type PrepareMW struct {
+	StatementPrepareAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 
-func NewRollbackMW() *RollbackMW {
-	return &RollbackMW{
+func NewPrepareMW() *PrepareMW {
+	return &PrepareMW{
 		middlewares: list.New(),
 	}
 }
 
-func (b *RollbackMW) Append(w RollbackHandler) {
-	b.middlewares.PushBack(rollbackPackageFunc(w))
+func (b *PrepareMW) Append(w PrepareHandler) {
+	b.middlewares.PushBack(preparePackageFunc(w))
 }
 
-func (b *RollbackMW) Prepend(w RollbackHandler) {
-	b.middlewares.PushFront(rollbackPackageFunc(w))
+func (b *PrepareMW) Prepend(w PrepareHandler) {
+	b.middlewares.PushBack(preparePackageFunc(w))
 }
 
 // PerformMiddleware executes the middleware after injecting vsql_context (if any)
-func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Beginner) {
+func (b *PrepareMW) PerformMiddleware(ctx context.Context, c vsql_context.Preparer) {
 	if b.middlewares.Len() == 0 {
 		return
 	}
@@ -61,14 +61,14 @@ func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Begin
 	c.Next(ctx)
 }
 
-func (b RollbackMW) Copy() *RollbackMW {
-	r := NewRollbackMW()
+func (b PrepareMW) Copy() *PrepareMW {
+	r := NewPrepareMW()
 	r.middlewares.PushBackList(b.middlewares)
 	return r
 }
 
-func rollbackPackageFunc(w RollbackHandler) vsql_context.MiddlewareFunc {
+func preparePackageFunc(w PrepareHandler) vsql_context.MiddlewareFunc {
 	return func(ctx context.Context, er vsql_context.Er) {
-		w(ctx, er.(vsql_context.Beginner))
+		w(ctx, er.(vsql_context.Preparer))
 	}
 }

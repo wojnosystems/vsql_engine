@@ -16,42 +16,59 @@
 package wares
 
 import (
-	"github.com/wojnosystems/vsql/vstmt"
-	"github.com/wojnosystems/vsql_engine/context"
+	"container/list"
+	"context"
+	"github.com/wojnosystems/vsql_engine/vsql_context"
 )
 
-type StatementCloseWare func(c context.Contexter, b vstmt.Statementer) vstmt.Statementer
+type StatementCloseHandler func(ctx context.Context, c vsql_context.StatementCloser)
 
 // Middleware for begin
 type StatementCloseAdder interface {
-	Add(w StatementCloseWare)
-}
-type StatementCloseApplyer interface {
-	Apply(vstmt.Statementer) vstmt.Statementer
+	Append(w StatementCloseHandler)
+	Prepend(w StatementCloseHandler)
 }
 
-type StatementCloser interface {
-	StatementCloseMiddleware() StatementCloseAdder
+type StatementCloseWare interface {
+	StatementCloseMW() StatementCloseAdder
 }
 
-type StatementClose struct {
+type StatementCloseMW struct {
 	StatementCloseAdder
-	StatementCloseApplyer
-	base
+	middlewares *list.List // StatementCloseHandler
 }
 
-func NewStatementClose() *StatementClose {
-	return &StatementClose{
-		base: *newBase(),
+func NewStatementCloseMW() *StatementCloseMW {
+	return &StatementCloseMW{
+		middlewares: list.New(),
 	}
 }
 
-func (b *StatementClose) Add(w StatementCloseWare) {
-	b.base.Add(w)
+func (b *StatementCloseMW) Append(w StatementCloseHandler) {
+	b.middlewares.PushBack(statementClosePackageFunc(w))
 }
 
-func (b *StatementClose) Apply(in vstmt.Statementer, ctx context.Contexter) vstmt.Statementer {
-	return b.ApplyBase(ctx, in, func(ctx context.Contexter, theMiddleware interface{}, sqlObject interface{}) (sqlObjectOut interface{}) {
-		return theMiddleware.(StatementCloseWare)(ctx, sqlObject.(vstmt.Statementer))
-	}).(vstmt.Statementer)
+func (b *StatementCloseMW) Prepend(w StatementCloseHandler) {
+	b.middlewares.PushFront(statementClosePackageFunc(w))
+}
+
+// PerformMiddleware executes the middleware after injecting vsql_context (if any)
+func (b *StatementCloseMW) PerformMiddleware(ctx context.Context, c vsql_context.StatementCloser) {
+	if b.middlewares.Len() == 0 {
+		return
+	}
+	c.(vsql_context.WithMiddlewarer).SetMiddlewares(b.middlewares)
+	c.Next(ctx)
+}
+
+func (b StatementCloseMW) Copy() *StatementCloseMW {
+	r := NewStatementCloseMW()
+	r.middlewares.PushBackList(b.middlewares)
+	return r
+}
+
+func statementClosePackageFunc(w StatementCloseHandler) vsql_context.MiddlewareFunc {
+	return func(ctx context.Context, er vsql_context.Er) {
+		w(ctx, er.(vsql_context.StatementCloser))
+	}
 }

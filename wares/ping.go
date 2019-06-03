@@ -21,39 +21,37 @@ import (
 	"github.com/wojnosystems/vsql_engine/vsql_context"
 )
 
-type RollbackHandler func(ctx context.Context, c vsql_context.Beginner)
-
 // Middleware for begin
-type RollbackAdder interface {
-	Append(w RollbackHandler)
-	Prepend(w RollbackHandler)
+type PingAdder interface {
+	Append(w vsql_context.MiddlewareFunc)
+	Prepend(w vsql_context.MiddlewareFunc)
 }
 
-type RollbackWare interface {
-	RollbackMW() RollbackAdder
+type PingWare interface {
+	PingMW() PingAdder
 }
 
-type RollbackMW struct {
-	RollbackAdder
+type PingMW struct {
+	PingAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 
-func NewRollbackMW() *RollbackMW {
-	return &RollbackMW{
+func NewPingMW() *PingMW {
+	return &PingMW{
 		middlewares: list.New(),
 	}
 }
 
-func (b *RollbackMW) Append(w RollbackHandler) {
-	b.middlewares.PushBack(rollbackPackageFunc(w))
+func (b *PingMW) Append(w vsql_context.MiddlewareFunc) {
+	b.middlewares.PushBack(w)
 }
 
-func (b *RollbackMW) Prepend(w RollbackHandler) {
-	b.middlewares.PushFront(rollbackPackageFunc(w))
+func (b *PingMW) Prepend(w vsql_context.MiddlewareFunc) {
+	b.middlewares.PushFront(w)
 }
 
 // PerformMiddleware executes the middleware after injecting vsql_context (if any)
-func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Beginner) {
+func (b *PingMW) PerformMiddleware(ctx context.Context, c vsql_context.WithMiddlewarer) {
 	if b.middlewares.Len() == 0 {
 		return
 	}
@@ -61,14 +59,8 @@ func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Begin
 	c.Next(ctx)
 }
 
-func (b RollbackMW) Copy() *RollbackMW {
-	r := NewRollbackMW()
+func (b PingMW) Copy() *PingMW {
+	r := NewPingMW()
 	r.middlewares.PushBackList(b.middlewares)
 	return r
-}
-
-func rollbackPackageFunc(w RollbackHandler) vsql_context.MiddlewareFunc {
-	return func(ctx context.Context, er vsql_context.Er) {
-		w(ctx, er.(vsql_context.Beginner))
-	}
 }

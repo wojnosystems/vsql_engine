@@ -21,39 +21,39 @@ import (
 	"github.com/wojnosystems/vsql_engine/vsql_context"
 )
 
-type RollbackHandler func(ctx context.Context, c vsql_context.Beginner)
+type InsertQueryHandler func(ctx context.Context, c vsql_context.Inserter)
 
 // Middleware for begin
-type RollbackAdder interface {
-	Append(w RollbackHandler)
-	Prepend(w RollbackHandler)
+type InsertQueryAdder interface {
+	Append(w InsertQueryHandler)
+	Prepend(w InsertQueryHandler)
 }
 
-type RollbackWare interface {
-	RollbackMW() RollbackAdder
+type InsertQueryWare interface {
+	InsertQueryMW() InsertQueryAdder
 }
 
-type RollbackMW struct {
-	RollbackAdder
+type InsertQueryMW struct {
+	InsertQueryAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 
-func NewRollbackMW() *RollbackMW {
-	return &RollbackMW{
+func NewInsertQueryMW() *InsertQueryMW {
+	return &InsertQueryMW{
 		middlewares: list.New(),
 	}
 }
 
-func (b *RollbackMW) Append(w RollbackHandler) {
-	b.middlewares.PushBack(rollbackPackageFunc(w))
+func (b *InsertQueryMW) Append(w InsertQueryHandler) {
+	b.middlewares.PushBack(insertQueryPackageFunc(w))
 }
 
-func (b *RollbackMW) Prepend(w RollbackHandler) {
-	b.middlewares.PushFront(rollbackPackageFunc(w))
+func (b *InsertQueryMW) Prepend(w InsertQueryHandler) {
+	b.middlewares.PushFront(insertQueryPackageFunc(w))
 }
 
 // PerformMiddleware executes the middleware after injecting vsql_context (if any)
-func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Beginner) {
+func (b *InsertQueryMW) PerformMiddleware(ctx context.Context, c vsql_context.Inserter) {
 	if b.middlewares.Len() == 0 {
 		return
 	}
@@ -61,14 +61,14 @@ func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Begin
 	c.Next(ctx)
 }
 
-func (b RollbackMW) Copy() *RollbackMW {
-	r := NewRollbackMW()
+func (b InsertQueryMW) Copy() *InsertQueryMW {
+	r := NewInsertQueryMW()
 	r.middlewares.PushBackList(b.middlewares)
 	return r
 }
 
-func rollbackPackageFunc(w RollbackHandler) vsql_context.MiddlewareFunc {
+func insertQueryPackageFunc(w InsertQueryHandler) vsql_context.MiddlewareFunc {
 	return func(ctx context.Context, er vsql_context.Er) {
-		w(ctx, er.(vsql_context.Beginner))
+		w(ctx, er.(vsql_context.Inserter))
 	}
 }

@@ -21,39 +21,39 @@ import (
 	"github.com/wojnosystems/vsql_engine/vsql_context"
 )
 
-type RollbackHandler func(ctx context.Context, c vsql_context.Beginner)
+type StatementExecQueryHandler func(ctx context.Context, c vsql_context.StatementExecQueryer)
 
 // Middleware for begin
-type RollbackAdder interface {
-	Append(w RollbackHandler)
-	Prepend(w RollbackHandler)
+type StatementExecQueryAdder interface {
+	Append(w StatementExecQueryHandler)
+	Prepend(w StatementExecQueryHandler)
 }
 
-type RollbackWare interface {
-	RollbackMW() RollbackAdder
+type StatementExecQueryWare interface {
+	StatementExecQueryMW() StatementExecQueryAdder
 }
 
-type RollbackMW struct {
-	RollbackAdder
-	middlewares *list.List // vsql_context.MiddlewareFunc
+type StatementExecQueryMW struct {
+	StatementExecQueryAdder
+	middlewares *list.List // StatementExecQueryHandler
 }
 
-func NewRollbackMW() *RollbackMW {
-	return &RollbackMW{
+func NewStatementExecQueryMW() *StatementExecQueryMW {
+	return &StatementExecQueryMW{
 		middlewares: list.New(),
 	}
 }
 
-func (b *RollbackMW) Append(w RollbackHandler) {
-	b.middlewares.PushBack(rollbackPackageFunc(w))
+func (b *StatementExecQueryMW) Append(w StatementExecQueryHandler) {
+	b.middlewares.PushBack(statementExecQueryPackageFunc(w))
 }
 
-func (b *RollbackMW) Prepend(w RollbackHandler) {
-	b.middlewares.PushFront(rollbackPackageFunc(w))
+func (b *StatementExecQueryMW) Prepend(w StatementExecQueryHandler) {
+	b.middlewares.PushFront(statementExecQueryPackageFunc(w))
 }
 
 // PerformMiddleware executes the middleware after injecting vsql_context (if any)
-func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Beginner) {
+func (b *StatementExecQueryMW) PerformMiddleware(ctx context.Context, c vsql_context.StatementExecQueryer) {
 	if b.middlewares.Len() == 0 {
 		return
 	}
@@ -61,14 +61,14 @@ func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Begin
 	c.Next(ctx)
 }
 
-func (b RollbackMW) Copy() *RollbackMW {
-	r := NewRollbackMW()
+func (b StatementExecQueryMW) Copy() *StatementExecQueryMW {
+	r := NewStatementExecQueryMW()
 	r.middlewares.PushBackList(b.middlewares)
 	return r
 }
 
-func rollbackPackageFunc(w RollbackHandler) vsql_context.MiddlewareFunc {
+func statementExecQueryPackageFunc(w StatementExecQueryHandler) vsql_context.MiddlewareFunc {
 	return func(ctx context.Context, er vsql_context.Er) {
-		w(ctx, er.(vsql_context.Beginner))
+		w(ctx, er.(vsql_context.StatementExecQueryer))
 	}
 }

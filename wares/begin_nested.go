@@ -16,42 +16,59 @@
 package wares
 
 import (
-	"github.com/wojnosystems/vsql"
-	"github.com/wojnosystems/vsql_engine/context"
+	"container/list"
+	"context"
+	"github.com/wojnosystems/vsql_engine/vsql_context"
 )
 
-type BeginNestedWare func(c context.Contexter, b vsql.QueryExecNestedTransactioner) vsql.QueryExecNestedTransactioner
+type BeginNestedHandler func(ctx context.Context, c vsql_context.NestedBeginner)
 
 // Middleware for begin
 type BeginNestedAdder interface {
-	Add(w BeginNestedWare)
-}
-type BeginNestedApplyer interface {
-	Apply(context.Contexter, vsql.QueryExecNestedTransactioner) vsql.QueryExecNestedTransactioner
+	Append(w BeginNestedHandler)
+	Prepend(w BeginNestedHandler)
 }
 
-type BeginNester interface {
-	BeginMiddleware() BeginNestedAdder
+type BeginNestedWare interface {
+	BeginNestedMW() BeginNestedAdder
 }
 
-type BeginNested struct {
+type BeginNestedMW struct {
 	BeginNestedAdder
-	BeginNestedApplyer
-	base
+	middlewares *list.List // vsql_context.BeginWareType
 }
 
-func NewBeginNested() *BeginNested {
-	return &BeginNested{
-		base: *newBase(),
+func NewBeginNestedMW() *BeginNestedMW {
+	return &BeginNestedMW{
+		middlewares: list.New(),
 	}
 }
 
-func (b *BeginNested) Add(w BeginNestedWare) {
-	b.base.Add(w)
+func (b *BeginNestedMW) Append(w BeginNestedHandler) {
+	b.middlewares.PushBack(beginNestedPackageFunc(w))
 }
 
-func (b *BeginNested) Apply(in vsql.QueryExecNestedTransactioner, ctx context.Contexter) vsql.QueryExecNestedTransactioner {
-	return b.ApplyBase(ctx, in, func(ctx context.Contexter, theMiddleware interface{}, sqlObject interface{}) (sqlObjectOut interface{}) {
-		return theMiddleware.(BeginNestedWare)(ctx, sqlObject.(vsql.QueryExecNestedTransactioner))
-	}).(vsql.QueryExecNestedTransactioner)
+func (b *BeginNestedMW) Prepend(w BeginNestedHandler) {
+	b.middlewares.PushFront(beginNestedPackageFunc(w))
+}
+
+// PerformMiddleware executes the middleware after injecting vsql_context (if any)
+func (b *BeginNestedMW) PerformMiddleware(ctx context.Context, c vsql_context.NestedBeginner) {
+	if b.middlewares.Len() == 0 {
+		return
+	}
+	c.(vsql_context.WithMiddlewarer).SetMiddlewares(b.middlewares)
+	c.Next(ctx)
+}
+
+func (b BeginNestedMW) Copy() *BeginNestedMW {
+	r := NewBeginNestedMW()
+	r.middlewares.PushBackList(b.middlewares)
+	return r
+}
+
+func beginNestedPackageFunc(w BeginNestedHandler) vsql_context.MiddlewareFunc {
+	return func(ctx context.Context, er vsql_context.Er) {
+		w(ctx, er.(vsql_context.NestedBeginner))
+	}
 }

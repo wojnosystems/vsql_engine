@@ -16,42 +16,59 @@
 package wares
 
 import (
-	"github.com/wojnosystems/vsql"
-	"github.com/wojnosystems/vsql_engine/context"
+	"container/list"
+	"context"
+	"github.com/wojnosystems/vsql_engine/vsql_context"
 )
 
-type CommitWare func(c context.Contexter, b vsql.Transactioner) vsql.Transactioner
+type CommitHandler func(ctx context.Context, c vsql_context.Beginner)
 
 // Middleware for begin
 type CommitAdder interface {
-	Add(w CommitWare)
-}
-type CommitApplyer interface {
-	Apply(vsql.Transactioner) vsql.Transactioner
+	Append(w CommitHandler)
+	Prepend(w CommitHandler)
 }
 
-type Committer interface {
-	CommitMiddleware() CommitAdder
+type CommitWare interface {
+	CommitMW() CommitAdder
 }
 
-type Commit struct {
+type CommitMW struct {
 	CommitAdder
-	CommitApplyer
-	base
+	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 
-func NewCommit() *Commit {
-	return &Commit{
-		base: *newBase(),
+func NewCommitMW() *CommitMW {
+	return &CommitMW{
+		middlewares: list.New(),
 	}
 }
 
-func (b *Commit) Add(w CommitWare) {
-	b.base.Add(w)
+func (b *CommitMW) Append(w CommitHandler) {
+	b.middlewares.PushBack(commitPackageFunc(w))
 }
 
-func (b *Commit) Apply(in vsql.Transactioner, ctx context.Contexter) vsql.Transactioner {
-	return b.ApplyBase(ctx, in, func(ctx context.Contexter, theMiddleware interface{}, sqlObject interface{}) (sqlObjectOut interface{}) {
-		return theMiddleware.(CommitWare)(ctx, sqlObject.(vsql.Transactioner))
-	}).(vsql.Transactioner)
+func (b *CommitMW) Prepend(w CommitHandler) {
+	b.middlewares.PushFront(commitPackageFunc(w))
+}
+
+// PerformMiddleware executes the middleware after injecting vsql_context (if any)
+func (b *CommitMW) PerformMiddleware(ctx context.Context, c vsql_context.Beginner) {
+	if b.middlewares.Len() == 0 {
+		return
+	}
+	c.(vsql_context.WithMiddlewarer).SetMiddlewares(b.middlewares)
+	c.Next(ctx)
+}
+
+func (b CommitMW) Copy() *CommitMW {
+	r := NewCommitMW()
+	r.middlewares.PushBackList(b.middlewares)
+	return r
+}
+
+func commitPackageFunc(w CommitHandler) vsql_context.MiddlewareFunc {
+	return func(ctx context.Context, er vsql_context.Er) {
+		w(ctx, er.(vsql_context.Beginner))
+	}
 }

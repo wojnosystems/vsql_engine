@@ -2,11 +2,18 @@
 
 ## Who this module is for
 
-This module is used in the various database implementations for vsql, or rather, it can be. This is a factory-model that will allow middleware to build and execute requests through the vsql interfaces. This module is not intended to be used by "normal" developers who just want to make calls to databases. This is intended for people who wish to make drivers or middleware for those drivers and those who are using those drivers to inject middleware into their database calls.
+This module is for any developer who said: "Middleware is great for web servers, I sure wish I had that for my database!" This module includes a framework that conforms to the interface as defined in: https://github.com/wojnosystems/vsql and allows you to inject middleware whenever calls are made. You can alter the query before they are run, or after you get the results.
+
+Potential uses (or at least the ones I needed):
+
+ * Query Logging
+ * Begin + Commit/Rollback tracking (be sure transactions are ended to avoid leaking resources)
+ * Prepare + Close tracking (be sure transactions are ended to avoid leaking resources)
+ * Global caching with Redis/Memcache
 
 # What does this module do?
 
-This module implements the https://github.com/wojnosystems/vsql interfaces using Go's database/sql package. It also provides a mechanism to inject callbacks for certain events:
+This module implements the https://github.com/wojnosystems/vsql interfaces, but instead of actually making database calls, it simply implements the interface and provides a way to plug into the interfaces calls. If you wish to use a database implementation, another module provides that for you using Go's standard database/sql package
 
  * Global (applies to all, is set when the engine started)
  * Begin (transaction)
@@ -24,7 +31,7 @@ These callbacks work like go-Gin, in that you pass in a function that is execute
 
 This context is shared with ALL of the calls. So if you add a value to the context of a Begin, you can look that up in Rollback or Result callbacks.
 
-Also, when a transaction is begun, or a statement is prepared, the context is cloned at that point. Any context added when the transaction was begun (if set in a Begin callback), is forgotten when the transaction is committed or rolled back. This applies to nested transactions, too.
+Adding values to the key-value store of the context is thread-safe.
 
 This was done to provide easier scoping, as transactions should not be communicating and this allows you to use the same key in transactions for values.
 
@@ -32,7 +39,54 @@ Any values set in the context BEFORE begin/prepare is called, will be CLONED int
 
 ## Using it
 
-You can inject middleware by calling the appropriate middleware callback end-point. If you wish to inject some middleware when a Row is created, call the 
+You can inject middleware by calling the appropriate middleware callback end-point.
+
+
+# Examples
+
+```go
+func main() {
+
+    engine := vsql_engine.New()
+    // Install MySQL for use
+    vsql_mysql.Install(engine)
+    
+    vsql_txnCloseCheck.Install(engine)
+
+    // statement close check
+    statementCloseCheck(engine)
+    
+    stmt, err := engine.Prepare( context.Background(), param.New("SELECT * FROM users") )
+    // Log has message: "statement prepared:w00t"
+    stmt.Close()
+    // Log has message: "statement closed:hawt"
+}
+
+// statementCloseCheck is custom middleware that installs itself into the SQL Engine. 
+func statementCloseCheck( engine vsql_engine.R ) {
+	engine.PrepareMW().Prepend( func()wares.Prepare {
+		return func(ctx context.Context, c vsql_context.Er, query vquery.Queryer) {
+			log.Println("statement prepared:w00t")
+			return c.Next(ctx, c, query)
+		}
+	} )
+	engine.StatementCloseMW().Prepend( func()wares.Prepare {
+		return func(ctx context.Context, c vsql_context.Er) {
+			log.Println("statement closed:hawt")
+			return c.Next(ctx, c)
+		}
+	} )
+}
+
+```
+
+# Creating your own middleware
+
+You can create your own middleware and store data in the vsql_context.Er object by using the KeyValue() object.
+
+## Naming your keys
+
+To avoid name collisions, you should name your keys for any data stored in vsql_context.Er.KeyValue() using the full name of your module, including the github.com part or where ever it's hosted. This should guarantee no collisions.
 
 # Purpose
 

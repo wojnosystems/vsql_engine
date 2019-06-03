@@ -21,39 +21,39 @@ import (
 	"github.com/wojnosystems/vsql_engine/vsql_context"
 )
 
-type RollbackHandler func(ctx context.Context, c vsql_context.Beginner)
+type QueryHandler func(ctx context.Context, c vsql_context.Queryer)
 
 // Middleware for begin
-type RollbackAdder interface {
-	Append(w RollbackHandler)
-	Prepend(w RollbackHandler)
+type QueryAdder interface {
+	Append(w QueryHandler)
+	Prepend(w QueryHandler)
 }
 
-type RollbackWare interface {
-	RollbackMW() RollbackAdder
+type QueryWare interface {
+	QueryMW() QueryAdder
 }
 
-type RollbackMW struct {
-	RollbackAdder
+type QueryMW struct {
+	QueryAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 
-func NewRollbackMW() *RollbackMW {
-	return &RollbackMW{
+func NewQueryMW() *QueryMW {
+	return &QueryMW{
 		middlewares: list.New(),
 	}
 }
 
-func (b *RollbackMW) Append(w RollbackHandler) {
-	b.middlewares.PushBack(rollbackPackageFunc(w))
+func (b *QueryMW) Append(w QueryHandler) {
+	b.middlewares.PushBack(queryPackageFunc(w))
 }
 
-func (b *RollbackMW) Prepend(w RollbackHandler) {
-	b.middlewares.PushFront(rollbackPackageFunc(w))
+func (b *QueryMW) Prepend(w QueryHandler) {
+	b.middlewares.PushFront(queryPackageFunc(w))
 }
 
 // PerformMiddleware executes the middleware after injecting vsql_context (if any)
-func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Beginner) {
+func (b *QueryMW) PerformMiddleware(ctx context.Context, c vsql_context.Queryer) {
 	if b.middlewares.Len() == 0 {
 		return
 	}
@@ -61,14 +61,14 @@ func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Begin
 	c.Next(ctx)
 }
 
-func (b RollbackMW) Copy() *RollbackMW {
-	r := NewRollbackMW()
+func (b QueryMW) Copy() *QueryMW {
+	r := NewQueryMW()
 	r.middlewares.PushBackList(b.middlewares)
 	return r
 }
 
-func rollbackPackageFunc(w RollbackHandler) vsql_context.MiddlewareFunc {
+func queryPackageFunc(w QueryHandler) vsql_context.MiddlewareFunc {
 	return func(ctx context.Context, er vsql_context.Er) {
-		w(ctx, er.(vsql_context.Beginner))
+		w(ctx, er.(vsql_context.Queryer))
 	}
 }

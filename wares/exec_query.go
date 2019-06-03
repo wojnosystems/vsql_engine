@@ -21,39 +21,39 @@ import (
 	"github.com/wojnosystems/vsql_engine/vsql_context"
 )
 
-type RollbackHandler func(ctx context.Context, c vsql_context.Beginner)
+type ExecHandler func(ctx context.Context, c vsql_context.Execer)
 
 // Middleware for begin
-type RollbackAdder interface {
-	Append(w RollbackHandler)
-	Prepend(w RollbackHandler)
+type ExecAdder interface {
+	Append(w ExecHandler)
+	Prepend(w ExecHandler)
 }
 
-type RollbackWare interface {
-	RollbackMW() RollbackAdder
+type ExecWare interface {
+	ExecQueryMW() ExecAdder
 }
 
-type RollbackMW struct {
-	RollbackAdder
+type ExecMW struct {
+	ExecAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 
-func NewRollbackMW() *RollbackMW {
-	return &RollbackMW{
+func NewExecMW() *ExecMW {
+	return &ExecMW{
 		middlewares: list.New(),
 	}
 }
 
-func (b *RollbackMW) Append(w RollbackHandler) {
-	b.middlewares.PushBack(rollbackPackageFunc(w))
+func (b *ExecMW) Append(w ExecHandler) {
+	b.middlewares.PushBack(execPackageFunc(w))
 }
 
-func (b *RollbackMW) Prepend(w RollbackHandler) {
-	b.middlewares.PushFront(rollbackPackageFunc(w))
+func (b *ExecMW) Prepend(w ExecHandler) {
+	b.middlewares.PushFront(execPackageFunc(w))
 }
 
 // PerformMiddleware executes the middleware after injecting vsql_context (if any)
-func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Beginner) {
+func (b *ExecMW) PerformMiddleware(ctx context.Context, c vsql_context.Execer) {
 	if b.middlewares.Len() == 0 {
 		return
 	}
@@ -61,14 +61,14 @@ func (b *RollbackMW) PerformMiddleware(ctx context.Context, c vsql_context.Begin
 	c.Next(ctx)
 }
 
-func (b RollbackMW) Copy() *RollbackMW {
-	r := NewRollbackMW()
+func (b ExecMW) Copy() *ExecMW {
+	r := NewExecMW()
 	r.middlewares.PushBackList(b.middlewares)
 	return r
 }
 
-func rollbackPackageFunc(w RollbackHandler) vsql_context.MiddlewareFunc {
+func execPackageFunc(w ExecHandler) vsql_context.MiddlewareFunc {
 	return func(ctx context.Context, er vsql_context.Er) {
-		w(ctx, er.(vsql_context.Beginner))
+		w(ctx, er.(vsql_context.Execer))
 	}
 }
