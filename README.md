@@ -80,25 +80,36 @@ Every vsql_context.* object has a [KeyValuer](https://github.com/wojnosystems/go
 # Examples
 
 ```go
+package main
+
+import(
+	"context"
+	"database/sql"
+	"github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/wojnosystems/vsql/vstmt"
+	"github.com/wojnosystems/vsql_engine"
+	"github.com/wojnosystems/vsql_engine/engine"
+)
+
 func main() {
+    // The engine is the magic part. It has all of the middleware
+    myEngine := engine.New()
+    // Install MySQL using Go's database/sql package
+    vsql_go.Install(myEngine, sql.Open("mysql", createMySQLConfig().FormatDSN()) )
 
-    engine := vsql_engine.New()
-    // Install MySQL for use
-    vsql_mysql.Install(engine)
+    // Install your own statement close check middleware
+    statementCloseCheck(myEngine)
     
-    vsql_txnCloseCheck.Install(engine)
-
-    // statement close check
-    statementCloseCheck(engine)
-    
-    stmt, err := engine.Prepare( context.Background(), param.New("SELECT * FROM users") )
+    stmt, err := myEngine.Prepare( context.Background(), param.New("SELECT * FROM users") )
     // Log has message: "statement prepared:w00t"
     stmt.Close()
     // Log has message: "statement closed:hawt"
 }
 
 // statementCloseCheck is custom middleware that installs itself into the SQL Engine. When a statement is prepared, it logs it, when a statement is closed, it logs it
-func statementCloseCheck( engine vsql_engine.R ) {
+func statementCloseCheck( e vsql_engine.SQLEnginer ) {
+	// Prepend is used as the MySQL engine is already installed and we want to run BEFORE the database gets a hold of things. We don't have to for this example, but it's generally what you want.
 	e.StatementPrepareMW().Prepend(func(ctx context.Context, c vsql_context.Preparer) {
         log.Println("statement prepared:w00t")
         c.Next(ctx)
@@ -109,6 +120,22 @@ func statementCloseCheck( engine vsql_engine.R ) {
 	} )
 }
 
+func createMySQLConfig() (cfg mysql.Config) {
+    cfg = mysql.Config{
+        User:                 os.Getenv("MYSQL_USER"),
+        Passwd:               os.Getenv("MYSQL_PASSWORD"),
+        Addr:                 os.Getenv("MYSQL_ADDR"),
+        DBName:               os.Getenv("MYSQL_DBNAME"),
+        AllowNativePasswords: true,
+        AllowOldPasswords:    true,
+    }
+    if strings.HasPrefix(cfg.Addr, "unix") {
+        cfg.Net = "unix"
+    } else {
+        cfg.Net = "tcp"
+    }
+    return
+}
 ```
 
 # Creating your own middleware
