@@ -40,14 +40,9 @@ type execQuery struct {
 func (c *execQuery) SetResult(s vresult.Resulter) {
 	c.result = s
 }
+
 func (c execQuery) Result() vresult.Resulter {
 	return c.result
-}
-func (c execQuery) Copy() Er {
-	n := NewExecQuery().(*execQuery)
-	n.commonQuery = c.commonQuery.Copy().(*commonQuery)
-	n.SetResult(c.Result())
-	return n
 }
 
 // Next runs the middleware, if any is available, null op if not. Next is only intended to be run once each middleware layer.

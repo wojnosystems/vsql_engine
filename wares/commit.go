@@ -34,7 +34,6 @@ type CommitWare interface {
 }
 
 type CommitMW struct {
-	CommitAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 

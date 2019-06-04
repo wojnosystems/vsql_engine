@@ -39,12 +39,7 @@ type statementCommon struct {
 func (c *statementCommon) SetStatement(s vstmt.Statementer) {
 	c.statement = s
 }
+
 func (c statementCommon) Statement() vstmt.Statementer {
 	return c.statement
-}
-func (c statementCommon) Copy() Er {
-	n := newStatementCommon()
-	n.contextBase = c.contextBase.Copy().(*contextBase)
-	n.SetStatement(c.Statement())
-	return n
 }

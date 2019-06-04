@@ -20,33 +20,38 @@ import (
 	"github.com/wojnosystems/vsql/param"
 	"github.com/wojnosystems/vsql/vresult"
 	"github.com/wojnosystems/vsql/vrows"
-	"github.com/wojnosystems/vsql/vstmt"
 	"github.com/wojnosystems/vsql_engine/vsql_context"
+	"github.com/wojnosystems/vsql_engine/wares"
 )
 
 // mysqlStatementTx is a prepared statement within the vsql_context of a transaction
 // sadly, based on the way the database/sql package works, most of this code has to be duplicated with the non-transaction version.
 // however, this should save people implementing this code downstream much typing and testing. The amount of code written here is also fairly small due to the way the vsql package is composed so few changes, if any, will be required.
-type goSqlTxStatement struct {
-	vstmt.Statementer
-	queryEngineFactory *engineQuery
+type txStatement struct {
+	preparer           vsql_context.Preparer
+	queryEngineFactory *engineNest
+	beginNestedMW      *wares.BeginNestedMW
 }
 
 // Query see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
-func (m *goSqlTxStatement) Query(ctx context.Context, query param.Parameterer) (rRows vrows.Rowser, err error) {
+func (m *txStatement) Query(ctx context.Context, query param.Parameterer) (rRows vrows.Rowser, err error) {
 	c := vsql_context.NewStatementQuery()
-	c.SetStatement(m)
+	c.SetStatement(m.preparer.Statement())
 	c.SetQuery(query)
 	c.(vsql_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
 	c.SetQuery(query)
 	m.queryEngineFactory.statementQueryMW.PerformMiddleware(ctx, c)
-	return c.Rows(), c.Error()
+	r := &rows{
+		rows:               c.Rows(),
+		queryEngineFactory: m.queryEngineFactory.engineQuery,
+	}
+	return r, c.Error()
 }
 
 // Insert see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
-func (m *goSqlTxStatement) Insert(ctx context.Context, query param.Parameterer) (res vresult.InsertResulter, err error) {
+func (m *txStatement) Insert(ctx context.Context, query param.Parameterer) (res vresult.InsertResulter, err error) {
 	c := vsql_context.NewStatementInsertQuery()
-	c.SetStatement(m)
+	c.SetStatement(m.preparer.Statement())
 	c.SetQuery(query)
 	c.(vsql_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
 	c.SetQuery(query)
@@ -55,9 +60,9 @@ func (m *goSqlTxStatement) Insert(ctx context.Context, query param.Parameterer) 
 }
 
 // Exec see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
-func (m *goSqlTxStatement) Exec(ctx context.Context, query param.Parameterer) (res vresult.Resulter, err error) {
+func (m *txStatement) Exec(ctx context.Context, query param.Parameterer) (res vresult.Resulter, err error) {
 	c := vsql_context.NewStatementExecQuery()
-	c.SetStatement(m)
+	c.SetStatement(m.preparer.Statement())
 	c.SetQuery(query)
 	c.(vsql_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
 	c.SetQuery(query)
@@ -66,9 +71,9 @@ func (m *goSqlTxStatement) Exec(ctx context.Context, query param.Parameterer) (r
 }
 
 // Close see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
-func (m *goSqlTxStatement) Close() error {
+func (m *txStatement) Close() error {
 	c := vsql_context.NewStatementClose()
-	c.SetStatement(m)
+	c.SetStatement(m.preparer.Statement())
 	c.(vsql_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
 	m.queryEngineFactory.statementCloseMW.PerformMiddleware(nil, c)
 	return c.Error()

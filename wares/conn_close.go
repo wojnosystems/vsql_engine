@@ -32,7 +32,6 @@ type ConnCloseWare interface {
 }
 
 type ConnCloseMW struct {
-	ConnCloseAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 

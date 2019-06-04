@@ -34,7 +34,6 @@ type StatementCloseWare interface {
 }
 
 type StatementCloseMW struct {
-	StatementCloseAdder
 	middlewares *list.List // StatementCloseHandler
 }
 

@@ -32,7 +32,6 @@ type PingWare interface {
 }
 
 type PingMW struct {
-	PingAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 

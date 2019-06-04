@@ -42,15 +42,9 @@ type statementQuery struct {
 func (c *statementQuery) SetRows(r vrows.Rowser) {
 	c.rows = r
 }
+
 func (c statementQuery) Rows() vrows.Rowser {
 	return c.rows
-}
-
-func (c statementQuery) Copy() Er {
-	n := NewStatementQuery().(*statementQuery)
-	n.statementQueryCommon = c.statementQueryCommon.Copy().(*statementQueryCommon)
-	n.SetRows(c.Rows())
-	return n
 }
 
 // Next runs the middleware, if any is available, null op if not. Next is only intended to be run once each middleware layer.

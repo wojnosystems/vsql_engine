@@ -40,14 +40,9 @@ type beginner struct {
 func (c *beginner) SetQueryExecTransactioner(s vsql.QueryExecTransactioner) {
 	c.queryExecTransactioner = s
 }
+
 func (c beginner) QueryExecTransactioner() vsql.QueryExecTransactioner {
 	return c.queryExecTransactioner
-}
-func (c beginner) Copy() Er {
-	n := NewBeginner().(*beginner)
-	n.commonBeginner = c.commonBeginner.Copy().(*commonBeginner)
-	n.SetQueryExecTransactioner(c.QueryExecTransactioner())
-	return n
 }
 
 // Next runs the middleware, if any is available, null op if not. Next is only intended to be run once each middleware layer.

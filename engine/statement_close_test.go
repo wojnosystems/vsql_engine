@@ -28,7 +28,7 @@ func TestEngine_StatementClose(t *testing.T) {
 	expectedStatement := &vstmt.StatementerMock{}
 	expectedParams := param.New("SELECT * FROM puppies")
 	engine := New()
-	engine.PrepareMW().Append(func(ctx context.Context, c vsql_context.Preparer) {
+	engine.StatementPrepareMW().Append(func(ctx context.Context, c vsql_context.Preparer) {
 		c.SetStatement(expectedStatement)
 		c.Next(ctx)
 	})

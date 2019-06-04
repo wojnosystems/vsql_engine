@@ -34,7 +34,6 @@ type InsertQueryWare interface {
 }
 
 type InsertQueryMW struct {
-	InsertQueryAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 

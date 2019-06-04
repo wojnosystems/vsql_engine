@@ -34,7 +34,6 @@ type StatementInsertQueryWare interface {
 }
 
 type StatementInsertQueryMW struct {
-	StatementInsertQueryAdder
 	middlewares *list.List // StatementInsertQueryHandler
 }
 

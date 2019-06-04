@@ -18,11 +18,11 @@ package vsql_context
 import (
 	"container/list"
 	"context"
-	"github.com/wojnosystems/vsql_engine/key_value"
+	go_keyvaluer "github.com/wojnosystems/go_keyvaluer"
 )
 
 type Er interface {
-	KeyValues() key_value.KeyValuer
+	KeyValues() go_keyvaluer.KeyValuer
 	// Next executes the next middleware in the chain until none are left
 	SetError(err error)
 	Error() error
@@ -43,7 +43,7 @@ type WithMiddlewarer interface {
 }
 
 type contextBase struct {
-	kvo key_value.KeyValuer
+	kvo go_keyvaluer.KeyValuer
 	err error
 	// middlewareV is always of type: MiddlewareFunc
 	middlewareV       *list.List
@@ -56,11 +56,11 @@ func New() WithMiddlewarer {
 
 func newContextBase() *contextBase {
 	return &contextBase{
-		kvo: key_value.New(),
+		kvo: go_keyvaluer.New(),
 	}
 }
 
-func (c *contextBase) KeyValues() key_value.KeyValuer {
+func (c *contextBase) KeyValues() go_keyvaluer.KeyValuer {
 	return c.kvo
 }
 
@@ -95,17 +95,15 @@ func (c contextBase) Error() error {
 }
 
 func (c *contextBase) SetMiddlewares(m *list.List) {
-	c.middlewareV = m
-	if c.middlewareV != nil {
-		c.currentMiddleware = c.middlewareV.Front()
+	if m == nil {
+		c.middlewareV = list.New()
+	} else {
+		c.middlewareV = m
 	}
+	c.currentMiddleware = c.middlewareV.Front()
 }
 
 func (c *contextBase) moveToNextMiddleware() {
-	if c.middlewareV == nil {
-		c.currentMiddleware = nil
-		return // nothing to do
-	}
 	// Just starting a middleware chain, start with the first node
 	if c.currentMiddleware != nil {
 		c.currentMiddleware = c.currentMiddleware.Next()

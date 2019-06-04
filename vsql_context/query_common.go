@@ -30,8 +30,8 @@ type commonQueryer interface {
 }
 type commonQuery struct {
 	*contextBase
-	query    param.Queryer
-	queryObj vsql.QueryExecTransactioner
+	query                  param.Queryer
+	queryExecTransactioner vsql.QueryExecTransactioner
 }
 
 func newCommonQuery() *commonQuery {
@@ -43,18 +43,15 @@ func newCommonQuery() *commonQuery {
 func (c *commonQuery) SetQuery(s param.Queryer) {
 	c.query = s
 }
+
 func (c commonQuery) Query() param.Queryer {
 	return c.query
 }
-func (c commonQuery) SetQueryExecTransactioner(s vsql.QueryExecTransactioner) {
-	c.queryObj = s
+
+func (c *commonQuery) SetQueryExecTransactioner(s vsql.QueryExecTransactioner) {
+	c.queryExecTransactioner = s
 }
+
 func (c commonQuery) QueryExecTransactioner() vsql.QueryExecTransactioner {
-	return c.queryObj
-}
-func (c commonQuery) Copy() Er {
-	n := newCommonQuery()
-	n.contextBase = c.contextBase.Copy().(*contextBase)
-	n.SetQueryExecTransactioner(c.QueryExecTransactioner())
-	return n
+	return c.queryExecTransactioner
 }

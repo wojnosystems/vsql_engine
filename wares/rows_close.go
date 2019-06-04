@@ -34,7 +34,6 @@ type RowsCloseWare interface {
 }
 
 type RowsCloseMW struct {
-	RowsCloseAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 

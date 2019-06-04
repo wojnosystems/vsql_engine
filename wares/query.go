@@ -34,7 +34,6 @@ type QueryWare interface {
 }
 
 type QueryMW struct {
-	QueryAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 

@@ -17,28 +17,14 @@ package vsql_context
 
 import (
 	"github.com/wojnosystems/vsql/param"
+	"testing"
 )
 
-type statementQueryCommoner interface {
-	SetQuery(queryer param.Queryer)
-	Query() param.Queryer
-}
-
-func newStatementQueryCommon() *statementQueryCommon {
-	return &statementQueryCommon{
-		statementCommon: newStatementCommon(),
+func TestStatementQueryCommon_SetQuery(t *testing.T) {
+	p := param.New("Puppy")
+	sqc := newStatementQueryCommon()
+	sqc.SetQuery(p)
+	if p != sqc.Query() {
+		t.Error("expected query to be the same")
 	}
-}
-
-type statementQueryCommon struct {
-	*statementCommon
-	queryer param.Queryer
-}
-
-func (c *statementQueryCommon) SetQuery(queryer param.Queryer) {
-	c.queryer = queryer
-}
-
-func (c statementQueryCommon) Query() param.Queryer {
-	return c.queryer
 }

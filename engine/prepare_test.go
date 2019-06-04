@@ -34,7 +34,7 @@ func TestEngine_Prepare(t *testing.T) {
 	expectedParams := param.New("SELECT * FROM puppies")
 	var actualParams param.Queryer
 	engine := New()
-	engine.PrepareMW().Append(func(ctx context.Context, c vsql_context.Preparer) {
+	engine.StatementPrepareMW().Append(func(ctx context.Context, c vsql_context.Preparer) {
 		actualParams = c.Query()
 		c.SetStatement(expectedStatement)
 		c.Next(ctx)

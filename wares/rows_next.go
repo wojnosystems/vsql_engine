@@ -34,7 +34,6 @@ type RowsNextWare interface {
 }
 
 type RowsNextMW struct {
-	RowsNextAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 

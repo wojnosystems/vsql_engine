@@ -31,12 +31,6 @@ type statementClose struct {
 	*statementCommon
 }
 
-func (c statementClose) Copy() Er {
-	n := NewStatementClose().(*statementClose)
-	n.contextBase = c.contextBase.Copy().(*contextBase)
-	return n
-}
-
 // Next runs the middleware, if any is available, null op if not. Next is only intended to be run once each middleware layer.
 func (c *statementClose) Next(ctx context.Context) {
 	if c.currentMiddleware != nil {

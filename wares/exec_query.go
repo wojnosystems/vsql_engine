@@ -34,7 +34,6 @@ type ExecWare interface {
 }
 
 type ExecMW struct {
-	ExecAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 

@@ -36,12 +36,7 @@ func newCommonBeginner() *commonBeginner {
 func (c *commonBeginner) SetTxOptions(n vtxn.TxOptioner) {
 	c.txnOptions = n
 }
+
 func (c commonBeginner) TxOptions() vtxn.TxOptioner {
-	return c.TxOptions()
-}
-func (c commonBeginner) Copy() Er {
-	n := newCommonBeginner()
-	n.contextBase = c.contextBase.Copy().(*contextBase)
-	n.SetTxOptions(c.txnOptions)
-	return n
+	return c.txnOptions
 }

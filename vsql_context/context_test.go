@@ -16,29 +16,13 @@
 package vsql_context
 
 import (
-	"github.com/wojnosystems/vsql/param"
+	"testing"
 )
 
-type statementQueryCommoner interface {
-	SetQuery(queryer param.Queryer)
-	Query() param.Queryer
-}
-
-func newStatementQueryCommon() *statementQueryCommon {
-	return &statementQueryCommon{
-		statementCommon: newStatementCommon(),
+func TestContextBase_SetNilMiddlewares(t *testing.T) {
+	b := newContextBase()
+	b.SetMiddlewares(nil)
+	if b.middlewareV == nil {
+		t.Error("expected middleware to not be nil")
 	}
-}
-
-type statementQueryCommon struct {
-	*statementCommon
-	queryer param.Queryer
-}
-
-func (c *statementQueryCommon) SetQuery(queryer param.Queryer) {
-	c.queryer = queryer
-}
-
-func (c statementQueryCommon) Query() param.Queryer {
-	return c.queryer
 }

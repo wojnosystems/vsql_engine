@@ -44,6 +44,7 @@ func (m *nestedTx) Begin(ctx context.Context, txOp vtxn.TxOptioner) (n vsql.Quer
 	s := &nestedTx{
 		beginnerNestedContext: c,
 		queryEngineFactory:    m.queryEngineFactory,
+		beginNestedMW:         m.beginNestedMW,
 	}
 	return s, c.Error()
 }
@@ -73,7 +74,11 @@ func (m *nestedTx) Query(ctx context.Context, query param.Queryer) (rRows vrows.
 	c.(vsql_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
 	c.SetQuery(query)
 	m.queryEngineFactory.queryMW.PerformMiddleware(ctx, c)
-	return c.Rows(), c.Error()
+	r := &rows{
+		rows:               c.Rows(),
+		queryEngineFactory: m.queryEngineFactory.engineQuery,
+	}
+	return r, c.Error()
 }
 
 // Insert see github.com/wojnosystems/vsql/strategy.go#QueryExecer
@@ -102,6 +107,11 @@ func (m *nestedTx) Prepare(ctx context.Context, query param.Queryer) (stmtr vstm
 	c.SetQueryExecTransactioner(m)
 	c.(vsql_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
 	c.SetQuery(query)
-	m.queryEngineFactory.prepareMW.PerformMiddleware(ctx, c)
-	return c.Statement(), c.Error()
+	m.queryEngineFactory.statementPrepareMW.PerformMiddleware(ctx, c)
+	s := &txStatement{
+		preparer:           c,
+		queryEngineFactory: m.queryEngineFactory,
+		beginNestedMW:      m.beginNestedMW,
+	}
+	return s, c.Error()
 }

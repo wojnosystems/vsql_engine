@@ -40,14 +40,9 @@ type nestedBeginner struct {
 func (c *nestedBeginner) SetQueryExecNestedTransactioner(s vsql.QueryExecNestedTransactioner) {
 	c.queryExecNestedTransactioner = s
 }
+
 func (c nestedBeginner) QueryExecNestedTransactioner() vsql.QueryExecNestedTransactioner {
 	return c.queryExecNestedTransactioner
-}
-func (c nestedBeginner) Copy() Er {
-	n := NewNestedBeginner().(*nestedBeginner)
-	n.commonBeginner = c.commonBeginner.Copy().(*commonBeginner)
-	n.SetQueryExecNestedTransactioner(c.QueryExecNestedTransactioner())
-	return n
 }
 
 // Next runs the middleware, if any is available, null op if not. Next is only intended to be run once each middleware layer.

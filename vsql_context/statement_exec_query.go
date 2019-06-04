@@ -42,15 +42,9 @@ type StatementExecQuery struct {
 func (c *StatementExecQuery) SetResult(resulter vresult.Resulter) {
 	c.result = resulter
 }
+
 func (c StatementExecQuery) Result() vresult.Resulter {
 	return c.result
-}
-
-func (c StatementExecQuery) Copy() Er {
-	n := NewStatementExecQuery().(*StatementExecQuery)
-	n.statementQueryCommon = c.statementQueryCommon.Copy().(*statementQueryCommon)
-	n.SetResult(c.Result())
-	return n
 }
 
 // Next runs the middleware, if any is available, null op if not. Next is only intended to be run once each middleware layer.

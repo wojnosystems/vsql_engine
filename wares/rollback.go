@@ -34,7 +34,6 @@ type RollbackWare interface {
 }
 
 type RollbackMW struct {
-	RollbackAdder
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 

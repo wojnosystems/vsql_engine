@@ -41,14 +41,9 @@ type prepare struct {
 func (c *prepare) SetStatement(s vstmt.Statementer) {
 	c.statement = s
 }
+
 func (c prepare) Statement() vstmt.Statementer {
 	return c.statement
-}
-func (c prepare) Copy() Er {
-	n := NewPreparer().(*prepare)
-	n.commonQuery = c.commonQuery.Copy().(*commonQuery)
-	n.SetStatement(c.Statement())
-	return n
 }
 
 // Next runs the middleware, if any is available, null op if not. Next is only intended to be run once each middleware layer.

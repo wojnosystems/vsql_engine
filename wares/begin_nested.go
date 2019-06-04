@@ -34,7 +34,6 @@ type BeginNestedWare interface {
 }
 
 type BeginNestedMW struct {
-	BeginNestedAdder
 	middlewares *list.List // vsql_context.BeginWareType
 }
 

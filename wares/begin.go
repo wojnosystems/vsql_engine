@@ -34,7 +34,6 @@ type BeginWare interface {
 }
 
 type BeginMW struct {
-	BeginAdder
 	middlewares *list.List // vsql_context.BeginWareType
 }
 

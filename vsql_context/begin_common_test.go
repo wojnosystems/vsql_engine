@@ -16,29 +16,15 @@
 package vsql_context
 
 import (
-	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vtxn"
+	"testing"
 )
 
-type statementQueryCommoner interface {
-	SetQuery(queryer param.Queryer)
-	Query() param.Queryer
-}
-
-func newStatementQueryCommon() *statementQueryCommon {
-	return &statementQueryCommon{
-		statementCommon: newStatementCommon(),
+func TestCommonBeginner_SetTxOptions(t *testing.T) {
+	o := &vtxn.TxOptionerMock{}
+	b := newCommonBeginner()
+	b.SetTxOptions(o)
+	if o != b.TxOptions() {
+		t.Error("expected TxOptions to not be the same")
 	}
-}
-
-type statementQueryCommon struct {
-	*statementCommon
-	queryer param.Queryer
-}
-
-func (c *statementQueryCommon) SetQuery(queryer param.Queryer) {
-	c.queryer = queryer
-}
-
-func (c statementQueryCommon) Query() param.Queryer {
-	return c.queryer
 }

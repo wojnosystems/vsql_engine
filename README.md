@@ -4,7 +4,21 @@
 
 This module is for any developer who said: "Middleware is great for web servers, I sure wish I had that for my database!" This module includes a framework that conforms to the interface as defined in: https://github.com/wojnosystems/vsql and allows you to inject middleware whenever calls are made. You can alter the query before they are run, or after you get the results.
 
-Potential uses (or at least the ones I needed):
+You might be just someone who's using this module because you need a way of injecting data into your SQL queries, or someone else used this and you're trying to figure out what's going on. For the most developers, they really shouldn't need to care about this module. All of the interfaces used in the code should be limited to the [VSQL](https://github.com/wojnosystems/vsql) interfaces.
+
+Before playing with this, you should be intimately familiar with Go's [database/sql](https://golang.org/pkg/database/sql/) package, as the VSQL and this module is based upon that interface.
+
+# How does it work?
+
+It works very similarly to Go-Gin's contexts, however, since each call is potentially different, nearly every Middleware (MW) stack has it's own, special context.
+
+You inject callbacks into specific events in the VSQL interface. This allows me to test the interface without actually hooking up a database. This also means that database drivers are ALSO middleware. This means the engine is database-agnostic and will run regardless of which database is hooked into it. This abstraction is extremely powerful if you need to swap out your data-store without re-writing all of your code.
+
+## Cloning Middleware Stacks
+
+You can create an engine, add callbacks, then clone the set and add more callbacks using the Group method. This allows you to mix and match quite easily. You can prepend or append callbacks to the chain.
+
+Potential uses (or at least the ones I needed/could come up with):
 
  * Query Logging
  * Begin + Commit/Rollback tracking (be sure transactions are ended to avoid leaking resources)
@@ -13,19 +27,31 @@ Potential uses (or at least the ones I needed):
 
 # What does this module do?
 
-This module implements the https://github.com/wojnosystems/vsql interfaces, but instead of actually making database calls, it simply implements the interface and provides a way to plug into the interfaces calls. If you wish to use a database implementation, another module provides that for you using Go's standard database/sql package
+This module implements the https://github.com/wojnosystems/vsql interfaces, but instead of actually making database calls, it simply implements the interface and provides a way to plug into the interfaces calls. If you wish to use a database implementation, another module provides that for you using Go's standard database/sql package.
 
- * Global (applies to all, is set when the engine started)
+You can hook into the following callback chains for the following events:
+
+ * Ping (connection)
+ * Query (connection)
+ * Insert (connection)
+ * Exec (connection)
+ * Close (connection)
  * Begin (transaction)
  * Begin (nested transaction)
  * Commit (transaction)
  * Rollback (transaction)
  * Prepare (statement)
+ * Query (statement)
+ * Insert (statement)
+ * Exec (statement)
  * Close (statement)
- * Rows are returned (query)
- * Row is created (query)
- * Result is created (query)
- * InsertResult is created (query)
+ * Prepare (transaction statement)
+ * Query (transaction statement)
+ * Insert (transaction statement)
+ * Exec (transaction statement)
+ * Close (transaction statement)
+ * Next (rows (result of query))
+ * Close (rows (result of query))
  
 These callbacks work like go-Gin, in that you pass in a function that is executed with a way to persist state. This context state is shared using a RWLock, so it's safe to set and get values, but not safe to override values, based on a conditional or if missing. Keep that in mind.
 
@@ -41,6 +67,15 @@ Any values set in the context BEFORE begin/prepare is called, will be CLONED int
 
 You can inject middleware by calling the appropriate middleware callback end-point.
 
+### Calling Next!
+
+You MUST call c.Next(ctx) to allow appended middleware to run. If you do not, no further callbacks will be executed.
+
+Anything running before the call to c.Next(ctx) should occur "before" the database middleware and anything after the c.Next(ctx) call should occur "after" the database middleware has run. Yes, even the database is middleware!
+
+## Passing data
+
+Every vsql_context.* object has a [KeyValuer](https://github.com/wojnosystems/go_keyvaluer) object. You can store arbitrary data here in a thread-safe way. If you need to store data that is transaction-specific, you can create your own substructure and key off of that transaction object. It's guaranteed to be unique (if you clean it up after closing transactions) and can identify the transaction. This is not directly supported by KeyValuer, but it's possible with a little leg-work on your end.
 
 # Examples
 
@@ -62,19 +97,15 @@ func main() {
     // Log has message: "statement closed:hawt"
 }
 
-// statementCloseCheck is custom middleware that installs itself into the SQL Engine. 
+// statementCloseCheck is custom middleware that installs itself into the SQL Engine. When a statement is prepared, it logs it, when a statement is closed, it logs it
 func statementCloseCheck( engine vsql_engine.R ) {
-	engine.PrepareMW().Prepend( func()wares.Prepare {
-		return func(ctx context.Context, c vsql_context.Er, query vquery.Queryer) {
-			log.Println("statement prepared:w00t")
-			return c.Next(ctx, c, query)
-		}
+	e.StatementPrepareMW().Prepend(func(ctx context.Context, c vsql_context.Preparer) {
+        log.Println("statement prepared:w00t")
+        c.Next(ctx)
 	} )
-	engine.StatementCloseMW().Prepend( func()wares.Prepare {
-		return func(ctx context.Context, c vsql_context.Er) {
-			log.Println("statement closed:hawt")
-			return c.Next(ctx, c)
-		}
+	e.StatementCloseMW().Prepend(func(ctx context.Context, c vsql_context.StatementCloser) {
+        log.Println("statement closed:hawt")
+        c.Next(ctx)
 	} )
 }
 

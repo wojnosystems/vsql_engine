@@ -35,7 +35,7 @@ type engineQuery struct {
 	connCloseMW            *wares.ConnCloseMW
 	commitMW               *wares.CommitMW
 	rollbackMW             *wares.RollbackMW
-	prepareMW              *wares.PrepareMW
+	statementPrepareMW     *wares.StatementPrepareMW
 	statementCloseMW       *wares.StatementCloseMW
 	statementQueryMW       *wares.StatementQueryMW
 	statementInsertQueryMW *wares.StatementInsertQueryMW
@@ -55,7 +55,7 @@ func newEngineQuery() *engineQuery {
 		connCloseMW:            wares.NewConnCloseMW(),
 		commitMW:               wares.NewCommitMW(),
 		rollbackMW:             wares.NewRollbackMW(),
-		prepareMW:              wares.NewPrepareMW(),
+		statementPrepareMW:     wares.NewStatementPrepareMW(),
 		statementCloseMW:       wares.NewStatementCloseMW(),
 		statementQueryMW:       wares.NewStatementQueryMW(),
 		statementInsertQueryMW: wares.NewStatementInsertQueryMW(),
@@ -69,19 +69,20 @@ func newEngineQuery() *engineQuery {
 // This allows you to mix and match middlewares using the same database connection pool, much like Go-Gin allows you to group routes and middleware.
 func (m *engineQuery) Group() *engineQuery {
 	rc := newEngineQuery()
-	rc.queryMW = m.queryMW
-	rc.insertQueryMW = m.insertQueryMW
-	rc.execQueryMW = m.execQueryMW
-	rc.pingMW = m.pingMW
-	rc.rowsNextMW = m.rowsNextMW
-	rc.rowsCloseMW = m.rowsCloseMW
-	rc.connCloseMW = m.connCloseMW
-	rc.commitMW = m.commitMW
-	rc.rollbackMW = m.rollbackMW
-	rc.statementCloseMW = m.statementCloseMW
-	rc.statementQueryMW = m.statementQueryMW
-	rc.statementInsertQueryMW = m.statementInsertQueryMW
-	rc.statementExecQueryMW = m.statementExecQueryMW
+	rc.queryMW = m.queryMW.Copy()
+	rc.insertQueryMW = m.insertQueryMW.Copy()
+	rc.execQueryMW = m.execQueryMW.Copy()
+	rc.pingMW = m.pingMW.Copy()
+	rc.rowsNextMW = m.rowsNextMW.Copy()
+	rc.rowsCloseMW = m.rowsCloseMW.Copy()
+	rc.connCloseMW = m.connCloseMW.Copy()
+	rc.commitMW = m.commitMW.Copy()
+	rc.rollbackMW = m.rollbackMW.Copy()
+	rc.statementPrepareMW = m.statementPrepareMW.Copy()
+	rc.statementCloseMW = m.statementCloseMW.Copy()
+	rc.statementQueryMW = m.statementQueryMW.Copy()
+	rc.statementInsertQueryMW = m.statementInsertQueryMW.Copy()
+	rc.statementExecQueryMW = m.statementExecQueryMW.Copy()
 
 	// OK to cast this as we KNOW it will be a context.WithMiddlewarer
 	rc.middlewareContext = m.middlewareContext.Copy().(vsql_context.WithMiddlewarer)
@@ -89,8 +90,8 @@ func (m *engineQuery) Group() *engineQuery {
 }
 
 // StatementCloseMiddleware provides a way to add items to the StatementCloseWares
-func (m *engineQuery) PrepareMW() wares.StatementPrepareAdder {
-	return m.prepareMW
+func (m *engineQuery) StatementPrepareMW() wares.StatementPrepareAdder {
+	return m.statementPrepareMW
 }
 
 // StatementCloseMiddleware provides a way to add items to the StatementCloseWares
@@ -201,7 +202,7 @@ func (m *engineQuery) Prepare(ctx context.Context, query param.Queryer) (stmtr v
 	c := vsql_context.NewPreparer()
 	c.(vsql_context.WithMiddlewarer).ShallowCopyFrom(m.middlewareContext)
 	c.SetQuery(query)
-	m.prepareMW.PerformMiddleware(ctx, c)
+	m.statementPrepareMW.PerformMiddleware(ctx, c)
 	s := &statement{
 		stmt:               c.Statement(),
 		queryEngineFactory: m,

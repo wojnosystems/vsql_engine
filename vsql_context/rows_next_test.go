@@ -13,4 +13,18 @@
 // OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-package key_value
+package vsql_context
+
+import (
+	"github.com/wojnosystems/vsql/vrows"
+	"testing"
+)
+
+func TestRowsContext_SetRows(t *testing.T) {
+	r := &vrows.RowerMock{}
+	sqc := NewRowNext()
+	sqc.SetRow(r)
+	if r != sqc.Row() {
+		t.Error("expected row to be the same")
+	}
+}

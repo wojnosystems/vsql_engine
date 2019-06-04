@@ -40,14 +40,9 @@ type query struct {
 func (c *query) SetRows(r vrows.Rowser) {
 	c.rows = r
 }
+
 func (c query) Rows() vrows.Rowser {
 	return c.rows
-}
-func (c query) Copy() Er {
-	n := NewQuery().(*query)
-	n.commonQuery = c.commonQuery.Copy().(*commonQuery)
-	n.SetRows(c.Rows())
-	return n
 }
 
 // Next runs the middleware, if any is available, null op if not. Next is only intended to be run once each middleware layer.

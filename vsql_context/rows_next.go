@@ -41,14 +41,9 @@ type rowNextContext struct {
 func (c *rowNextContext) SetRow(r vrows.Rower) {
 	c.row = r
 }
+
 func (c rowNextContext) Row() vrows.Rower {
 	return c.row
-}
-func (c rowNextContext) Copy() Er {
-	n := NewRowNext().(*rowNextContext)
-	n.rowsContext = c.rowsContext.Copy().(*rowsContext)
-	n.SetRows(c.Rows())
-	return n
 }
 
 // Next runs the middleware, if any is available, null op if not. Next is only intended to be run once each middleware layer.

@@ -42,15 +42,9 @@ type StatementInsertQuery struct {
 func (c *StatementInsertQuery) SetInsertResult(resulter vresult.InsertResulter) {
 	c.result = resulter
 }
+
 func (c StatementInsertQuery) InsertResult() vresult.InsertResulter {
 	return c.result
-}
-
-func (c StatementInsertQuery) Copy() Er {
-	n := NewStatementInsertQuery().(*StatementInsertQuery)
-	n.statementQueryCommon = c.statementQueryCommon.Copy().(*statementQueryCommon)
-	n.SetInsertResult(c.InsertResult())
-	return n
 }
 
 // Next runs the middleware, if any is available, null op if not. Next is only intended to be run once each middleware layer.

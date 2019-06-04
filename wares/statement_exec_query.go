@@ -34,7 +34,6 @@ type StatementExecQueryWare interface {
 }
 
 type StatementExecQueryMW struct {
-	StatementExecQueryAdder
 	middlewares *list.List // StatementExecQueryHandler
 }
 

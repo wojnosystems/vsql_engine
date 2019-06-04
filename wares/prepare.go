@@ -30,30 +30,29 @@ type StatementPrepareAdder interface {
 }
 
 type StatementPrepareWare interface {
-	PrepareMW() StatementPrepareAdder
+	StatementPrepareMW() StatementPrepareAdder
 }
 
-type PrepareMW struct {
-	StatementPrepareAdder
+type StatementPrepareMW struct {
 	middlewares *list.List // vsql_context.MiddlewareFunc
 }
 
-func NewPrepareMW() *PrepareMW {
-	return &PrepareMW{
+func NewStatementPrepareMW() *StatementPrepareMW {
+	return &StatementPrepareMW{
 		middlewares: list.New(),
 	}
 }
 
-func (b *PrepareMW) Append(w PrepareHandler) {
+func (b *StatementPrepareMW) Append(w PrepareHandler) {
 	b.middlewares.PushBack(preparePackageFunc(w))
 }
 
-func (b *PrepareMW) Prepend(w PrepareHandler) {
-	b.middlewares.PushBack(preparePackageFunc(w))
+func (b *StatementPrepareMW) Prepend(w PrepareHandler) {
+	b.middlewares.PushFront(preparePackageFunc(w))
 }
 
 // PerformMiddleware executes the middleware after injecting vsql_context (if any)
-func (b *PrepareMW) PerformMiddleware(ctx context.Context, c vsql_context.Preparer) {
+func (b *StatementPrepareMW) PerformMiddleware(ctx context.Context, c vsql_context.Preparer) {
 	if b.middlewares.Len() == 0 {
 		return
 	}
@@ -61,8 +60,8 @@ func (b *PrepareMW) PerformMiddleware(ctx context.Context, c vsql_context.Prepar
 	c.Next(ctx)
 }
 
-func (b PrepareMW) Copy() *PrepareMW {
-	r := NewPrepareMW()
+func (b StatementPrepareMW) Copy() *StatementPrepareMW {
+	r := NewStatementPrepareMW()
 	r.middlewares.PushBackList(b.middlewares)
 	return r
 }
