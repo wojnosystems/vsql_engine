@@ -17,60 +17,60 @@ package vsql_engine
 
 import (
 	"github.com/wojnosystems/vsql"
-	"github.com/wojnosystems/vsql_engine/wares"
+	"github.com/wojnosystems/vsql_engine/engine_ware"
 )
 
 // SQLEnginer is the base engine with non-nested transactions
-type SQLEnginer interface {
-	SQLEngineQueryer
-	// This Engine conforms to the SQLNester interface
+type SingleTXer interface {
+	SQLQueryer
+	// This Engine conforms to the MultiTXer interface
 	vsql.SQLer
 	// Enables the transactions to be used, but not nested transactions
-	wares.BeginWare
+	engine_ware.BeginWare
 	// Group creates a copy of the middleware and context created thus far so you can have customized middleware for parts of your application
-	Group() SQLEnginer
+	Group() SingleTXer
 }
 
 // SQLEnginer is the version of the engine with nested transactions
-type SQLNestedEnginer interface {
-	SQLEngineQueryer
-	// This Engine conforms to the SQLNester interface
+type MultiTXer interface {
+	SQLQueryer
+	// This Engine conforms to the MultiTXer interface
 	vsql.SQLNester
 	// Enables nested transactions
-	wares.BeginNestedWare
+	engine_ware.BeginNestedWare
 	// Group creates a copy of the middleware and context created thus far so you can have customized middleware for parts of your application
-	Group() SQLNestedEnginer
+	Group() MultiTXer
 }
 
 // SQLEngineQueryer is the part of the engine that only supports the operations common to both the nested and non-nested engine
 // this includes regular queries (SELECT) and other operations on the database (DELETE/UPDATE/INSERT/ETC)
-type SQLEngineQueryer interface {
+type SQLQueryer interface {
 	// Enables transactions to be committed
-	wares.CommitWare
+	engine_ware.CommitWare
 	// Enables transactions to be rolled back
-	wares.RollbackWare
+	engine_ware.RollbackWare
 	// Enables (result-returning) queries to be run
-	wares.QueryWare
+	engine_ware.QueryWare
 	// Enables INSERT INTO to be performed
-	wares.InsertQueryWare
+	engine_ware.InsertQueryWare
 	// Enables Exec to be called: DELETE, UPDATE, INSERT INTO
-	wares.ExecWare
+	engine_ware.ExecWare
 	// Enables the ability to create statements
-	wares.StatementPrepareWare
+	engine_ware.StatementPrepareWare
 	// Enables the ability to close statements
-	wares.StatementCloseWare
+	engine_ware.StatementCloseWare
 	// Enables Statement-based Queries
-	wares.StatementQueryWare
+	engine_ware.StatementQueryWare
 	// Enables Statement-based Inserts
-	wares.StatementInsertQueryWare
+	engine_ware.StatementInsertQueryWare
 	// Enables Statement-based Execs
-	wares.StatementExecQueryWare
+	engine_ware.StatementExecQueryWare
 	// Enables result Rows records to be closed
-	wares.RowsCloseWare
+	engine_ware.RowsCloseWare
 	// Enables the next row to be fetched
-	wares.RowsNextWare
+	engine_ware.RowsNextWare
 	// Enables the ability to ping the database server to check for connectivity
-	wares.PingWare
+	engine_ware.PingWare
 	// Enables the connection to be closed
-	wares.ConnCloseWare
+	engine_ware.ConnCloseWare
 }

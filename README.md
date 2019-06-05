@@ -87,34 +87,38 @@ import(
 	"database/sql"
 	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/wojnosystems/vsql/param"
 	"github.com/wojnosystems/vsql/vstmt"
 	"github.com/wojnosystems/vsql_engine"
-	"github.com/wojnosystems/vsql_engine/engine"
+	"github.com/wojnosystems/vsql_engine/engine_context"
+	"log"
+	"os"
+	"strings"
 )
 
 func main() {
     // The engine is the magic part. It has all of the middleware
-    myEngine := engine.New()
+    myEngine := vsql_engine.NewSingle()
     // Install MySQL using Go's database/sql package
     vsql_go.Install(myEngine, sql.Open("mysql", createMySQLConfig().FormatDSN()) )
 
     // Install your own statement close check middleware
     statementCloseCheck(myEngine)
     
-    stmt, err := myEngine.Prepare( context.Background(), param.New("SELECT * FROM users") )
+    stmt, _ := myEngine.Prepare( context.Background(), param.New("SELECT * FROM users") )
     // Log has message: "statement prepared:w00t"
     stmt.Close()
     // Log has message: "statement closed:hawt"
 }
 
 // statementCloseCheck is custom middleware that installs itself into the SQL Engine. When a statement is prepared, it logs it, when a statement is closed, it logs it
-func statementCloseCheck( e vsql_engine.SQLEnginer ) {
+func statementCloseCheck( e vsql_engine.SingleTXer ) {
 	// Prepend is used as the MySQL engine is already installed and we want to run BEFORE the database gets a hold of things. We don't have to for this example, but it's generally what you want.
-	e.StatementPrepareMW().Prepend(func(ctx context.Context, c vsql_context.Preparer) {
+	e.StatementPrepareMW().Prepend(func(ctx context.Context, c engine_context.Preparer) {
         log.Println("statement prepared:w00t")
         c.Next(ctx)
 	} )
-	e.StatementCloseMW().Prepend(func(ctx context.Context, c vsql_context.StatementCloser) {
+	e.StatementCloseMW().Prepend(func(ctx context.Context, c engine_context.StatementCloser) {
         log.Println("statement closed:hawt")
         c.Next(ctx)
 	} )
