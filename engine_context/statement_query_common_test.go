@@ -16,12 +16,12 @@
 package engine_context
 
 import (
-	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vparam"
 	"testing"
 )
 
 func TestStatementQueryCommon_SetQuery(t *testing.T) {
-	p := param.New("Puppy")
+	p := vparam.New("Puppy")
 	sqc := newStatementQueryCommon()
 	sqc.SetQuery(p)
 	if p != sqc.Query() {

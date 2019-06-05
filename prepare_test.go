@@ -18,7 +18,7 @@ package vsql_engine
 import (
 	"context"
 	"errors"
-	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vparam"
 	"github.com/wojnosystems/vsql/vrows"
 	"github.com/wojnosystems/vsql/vstmt"
 	"github.com/wojnosystems/vsql_engine/engine_context"
@@ -31,8 +31,8 @@ func TestEngine_Prepare(t *testing.T) {
 
 	expectedStatement := &vstmt.StatementerMock{}
 	var actualStatement vstmt.Statementer
-	expectedParams := param.New("SELECT * FROM puppies")
-	var actualParams param.Queryer
+	expectedParams := vparam.New("SELECT * FROM puppies")
+	var actualParams vparam.Queryer
 	engine := NewSingle()
 	engine.StatementPrepareMW().Append(func(ctx context.Context, c engine_context.Preparer) {
 		actualParams = c.Query()
@@ -49,7 +49,7 @@ func TestEngine_Prepare(t *testing.T) {
 		c.SetRows(expectedRows)
 		c.Next(ctx)
 	})
-	rows, _ := statement.Query(context.Background(), param.NewAppendData([]interface{}{5, "true"}))
+	rows, _ := statement.Query(context.Background(), vparam.NewAppendData([]interface{}{5, "true"}))
 	if actualStatement != expectedStatement {
 		t.Error("expected actual statement to be set")
 	}

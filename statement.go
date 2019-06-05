@@ -17,7 +17,7 @@ package vsql_engine
 
 import (
 	"context"
-	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vparam"
 	"github.com/wojnosystems/vsql/vresult"
 	"github.com/wojnosystems/vsql/vrows"
 	"github.com/wojnosystems/vsql/vstmt"
@@ -31,7 +31,7 @@ type statement struct {
 }
 
 // Query see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
-func (m *statement) Query(ctx context.Context, query param.Parameterer) (rRows vrows.Rowser, err error) {
+func (m *statement) Query(ctx context.Context, query vparam.Parameterer) (rRows vrows.Rowser, err error) {
 	c := engine_context.NewStatementQuery()
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
 	c.SetQuery(query)
@@ -45,7 +45,7 @@ func (m *statement) Query(ctx context.Context, query param.Parameterer) (rRows v
 }
 
 // Insert see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
-func (m *statement) Insert(ctx context.Context, query param.Parameterer) (res vresult.InsertResulter, err error) {
+func (m *statement) Insert(ctx context.Context, query vparam.Parameterer) (res vresult.InsertResulter, err error) {
 	c := engine_context.NewStatementInsertQuery()
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
 	c.SetQuery(query)
@@ -55,7 +55,7 @@ func (m *statement) Insert(ctx context.Context, query param.Parameterer) (res vr
 }
 
 // Exec see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
-func (m *statement) Exec(ctx context.Context, query param.Parameterer) (res vresult.Resulter, err error) {
+func (m *statement) Exec(ctx context.Context, query vparam.Parameterer) (res vresult.Resulter, err error) {
 	c := engine_context.NewStatementExecQuery()
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
 	c.SetQuery(query)

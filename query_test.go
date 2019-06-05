@@ -18,7 +18,7 @@ package vsql_engine
 import (
 	"context"
 	"errors"
-	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vparam"
 	"github.com/wojnosystems/vsql/vrows"
 	"github.com/wojnosystems/vsql_engine/engine_context"
 	"testing"
@@ -27,8 +27,8 @@ import (
 func TestEngine_Query(t *testing.T) {
 	expectedRows := &vrows.RowserMock{}
 	var actualRows vrows.Rowser
-	expectedParams := param.New("SELECT * FROM puppies")
-	var actualParams param.Queryer
+	expectedParams := vparam.New("SELECT * FROM puppies")
+	var actualParams vparam.Queryer
 	engine := NewSingle()
 	engine.QueryMW().Append(func(ctx context.Context, c engine_context.Queryer) {
 		actualParams = c.Query()

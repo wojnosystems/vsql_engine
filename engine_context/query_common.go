@@ -17,7 +17,7 @@ package engine_context
 
 import (
 	"github.com/wojnosystems/vsql"
-	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vparam"
 )
 
 type commonQueryer interface {
@@ -25,12 +25,12 @@ type commonQueryer interface {
 
 	SetQueryExecTransactioner(vsql.QueryExecTransactioner)
 	QueryExecTransactioner() vsql.QueryExecTransactioner
-	SetQuery(param.Queryer)
-	Query() param.Queryer
+	SetQuery(vparam.Queryer)
+	Query() vparam.Queryer
 }
 type commonQuery struct {
 	*contextBase
-	query                  param.Queryer
+	query                  vparam.Queryer
 	queryExecTransactioner vsql.QueryExecTransactioner
 }
 
@@ -40,11 +40,11 @@ func newCommonQuery() *commonQuery {
 	}
 }
 
-func (c *commonQuery) SetQuery(s param.Queryer) {
+func (c *commonQuery) SetQuery(s vparam.Queryer) {
 	c.query = s
 }
 
-func (c commonQuery) Query() param.Queryer {
+func (c commonQuery) Query() vparam.Queryer {
 	return c.query
 }
 

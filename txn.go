@@ -17,7 +17,7 @@ package vsql_engine
 
 import (
 	"context"
-	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vparam"
 	"github.com/wojnosystems/vsql/vresult"
 	"github.com/wojnosystems/vsql/vrows"
 	"github.com/wojnosystems/vsql/vstmt"
@@ -46,7 +46,7 @@ func (m *nonNestedTx) Rollback() error {
 }
 
 // Query nonNestedTx github.com/wojnosystems/vsql/strategy.go#QueryExecer
-func (m *nonNestedTx) Query(ctx context.Context, query param.Queryer) (rRows vrows.Rowser, err error) {
+func (m *nonNestedTx) Query(ctx context.Context, query vparam.Queryer) (rRows vrows.Rowser, err error) {
 	c := engine_context.NewQuery()
 	c.SetQueryExecTransactioner(m)
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
@@ -60,7 +60,7 @@ func (m *nonNestedTx) Query(ctx context.Context, query param.Queryer) (rRows vro
 }
 
 // Insert see github.com/wojnosystems/vsql/strategy.go#QueryExecer
-func (m *nonNestedTx) Insert(ctx context.Context, query param.Queryer) (res vresult.InsertResulter, err error) {
+func (m *nonNestedTx) Insert(ctx context.Context, query vparam.Queryer) (res vresult.InsertResulter, err error) {
 	c := engine_context.NewInsertQuery()
 	c.SetQueryExecTransactioner(m)
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
@@ -70,7 +70,7 @@ func (m *nonNestedTx) Insert(ctx context.Context, query param.Queryer) (res vres
 }
 
 // Exec see github.com/wojnosystems/vsql/strategy.go#QueryExecer
-func (m *nonNestedTx) Exec(ctx context.Context, query param.Queryer) (res vresult.Resulter, err error) {
+func (m *nonNestedTx) Exec(ctx context.Context, query vparam.Queryer) (res vresult.Resulter, err error) {
 	c := engine_context.NewExecQuery()
 	c.SetQueryExecTransactioner(m)
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
@@ -80,7 +80,7 @@ func (m *nonNestedTx) Exec(ctx context.Context, query param.Queryer) (res vresul
 }
 
 // Prepare see github.com/wojnosystems/vsql/vstmt/statements.go#Preparer
-func (m *nonNestedTx) Prepare(ctx context.Context, query param.Queryer) (stmtr vstmt.Statementer, err error) {
+func (m *nonNestedTx) Prepare(ctx context.Context, query vparam.Queryer) (stmtr vstmt.Statementer, err error) {
 	c := engine_context.NewPreparer()
 	c.SetQueryExecTransactioner(m)
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)

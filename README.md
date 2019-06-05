@@ -105,7 +105,7 @@ func main() {
     // Install your own statement close check middleware
     statementCloseCheck(myEngine)
     
-    stmt, _ := myEngine.Prepare( context.Background(), param.New("SELECT * FROM users") )
+    stmt, _ := myEngine.Prepare( context.Background(), vparam.New("SELECT * FROM users") )
     // Log has message: "statement prepared:w00t"
     stmt.Close()
     // Log has message: "statement closed:hawt"

@@ -16,12 +16,12 @@
 package engine_context
 
 import (
-	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vparam"
 )
 
 type statementQueryCommoner interface {
-	SetQuery(queryer param.Queryer)
-	Query() param.Queryer
+	SetQuery(queryer vparam.Queryer)
+	Query() vparam.Queryer
 }
 
 func newStatementQueryCommon() *statementQueryCommon {
@@ -32,13 +32,13 @@ func newStatementQueryCommon() *statementQueryCommon {
 
 type statementQueryCommon struct {
 	*statementCommon
-	queryer param.Queryer
+	queryer vparam.Queryer
 }
 
-func (c *statementQueryCommon) SetQuery(queryer param.Queryer) {
+func (c *statementQueryCommon) SetQuery(queryer vparam.Queryer) {
 	c.queryer = queryer
 }
 
-func (c statementQueryCommon) Query() param.Queryer {
+func (c statementQueryCommon) Query() vparam.Queryer {
 	return c.queryer
 }

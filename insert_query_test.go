@@ -17,7 +17,7 @@ package vsql_engine
 
 import (
 	"context"
-	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vparam"
 	"github.com/wojnosystems/vsql/vresult"
 	"github.com/wojnosystems/vsql_engine/engine_context"
 	"testing"
@@ -25,8 +25,8 @@ import (
 
 func TestEngine_InsertQuery(t *testing.T) {
 	expectedResult := &vresult.InsertResulterMock{}
-	expectedParams := param.New("SELECT * FROM puppies")
-	var actualParams param.Queryer
+	expectedParams := vparam.New("SELECT * FROM puppies")
+	var actualParams vparam.Queryer
 	engine := NewSingle()
 	engine.InsertQueryMW().Append(func(ctx context.Context, c engine_context.Inserter) {
 		actualParams = c.Query()

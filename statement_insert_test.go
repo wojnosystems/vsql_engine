@@ -17,7 +17,7 @@ package vsql_engine
 
 import (
 	"context"
-	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vparam"
 	"github.com/wojnosystems/vsql/vresult"
 	"github.com/wojnosystems/vsql/vstmt"
 	"github.com/wojnosystems/vsql_engine/engine_context"
@@ -28,7 +28,7 @@ func TestEngine_StatementInsert(t *testing.T) {
 	expectedResult := &vresult.InsertResulterMock{}
 
 	expectedStatement := &vstmt.StatementerMock{}
-	expectedParams := param.New("SELECT * FROM puppies")
+	expectedParams := vparam.New("SELECT * FROM puppies")
 	engine := NewSingle()
 	engine.StatementPrepareMW().Append(func(ctx context.Context, c engine_context.Preparer) {
 		c.SetStatement(expectedStatement)
@@ -40,7 +40,7 @@ func TestEngine_StatementInsert(t *testing.T) {
 		c.SetInsertResult(expectedResult)
 		c.Next(ctx)
 	})
-	result, _ := statement.Insert(context.Background(), param.NewAppendData([]interface{}{5, "true"}))
+	result, _ := statement.Insert(context.Background(), vparam.NewAppendData([]interface{}{5, "true"}))
 
 	if result != expectedResult {
 		t.Error("expected the results to be identical")

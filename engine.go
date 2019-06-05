@@ -17,7 +17,7 @@ package vsql_engine
 
 import (
 	"context"
-	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vparam"
 	"github.com/wojnosystems/vsql/vresult"
 	"github.com/wojnosystems/vsql/vrows"
 	"github.com/wojnosystems/vsql/vstmt"
@@ -167,7 +167,7 @@ func (m *engineQuery) Ping(ctx context.Context) error {
 }
 
 // Query see github.com/wojnosystems/vsql/vquery/queryer.go#Queryer
-func (m *engineQuery) Query(ctx context.Context, query param.Queryer) (rRows vrows.Rowser, err error) {
+func (m *engineQuery) Query(ctx context.Context, query vparam.Queryer) (rRows vrows.Rowser, err error) {
 	c := engine_context.NewQuery()
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.middlewareContext)
 	c.SetQuery(query)
@@ -180,7 +180,7 @@ func (m *engineQuery) Query(ctx context.Context, query param.Queryer) (rRows vro
 }
 
 // Insert see github.com/wojnosystems/vsql/vquery/queryer.go#Inserter
-func (m *engineQuery) Insert(ctx context.Context, query param.Queryer) (res vresult.InsertResulter, err error) {
+func (m *engineQuery) Insert(ctx context.Context, query vparam.Queryer) (res vresult.InsertResulter, err error) {
 	c := engine_context.NewInsertQuery()
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.middlewareContext)
 	c.SetQuery(query)
@@ -189,7 +189,7 @@ func (m *engineQuery) Insert(ctx context.Context, query param.Queryer) (res vres
 }
 
 // Exec see github.com/wojnosystems/vsql/vquery/queryer.go#Execer
-func (m *engineQuery) Exec(ctx context.Context, query param.Queryer) (res vresult.Resulter, err error) {
+func (m *engineQuery) Exec(ctx context.Context, query vparam.Queryer) (res vresult.Resulter, err error) {
 	c := engine_context.NewExecQuery()
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.middlewareContext)
 	c.SetQuery(query)
@@ -198,7 +198,7 @@ func (m *engineQuery) Exec(ctx context.Context, query param.Queryer) (res vresul
 }
 
 // Prepare see github.com/wojnosystems/vsql/vstmt/statement.go#Preparer
-func (m *engineQuery) Prepare(ctx context.Context, query param.Queryer) (stmtr vstmt.Statementer, err error) {
+func (m *engineQuery) Prepare(ctx context.Context, query vparam.Queryer) (stmtr vstmt.Statementer, err error) {
 	c := engine_context.NewPreparer()
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.middlewareContext)
 	c.SetQuery(query)

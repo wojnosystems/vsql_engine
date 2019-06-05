@@ -17,7 +17,7 @@ package vsql_engine
 
 import (
 	"context"
-	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vparam"
 	"github.com/wojnosystems/vsql/vstmt"
 	"github.com/wojnosystems/vsql_engine/engine_context"
 	"testing"
@@ -26,7 +26,7 @@ import (
 func TestEngine_StatementClose(t *testing.T) {
 
 	expectedStatement := &vstmt.StatementerMock{}
-	expectedParams := param.New("SELECT * FROM puppies")
+	expectedParams := vparam.New("SELECT * FROM puppies")
 	engine := NewSingle()
 	engine.StatementPrepareMW().Append(func(ctx context.Context, c engine_context.Preparer) {
 		c.SetStatement(expectedStatement)

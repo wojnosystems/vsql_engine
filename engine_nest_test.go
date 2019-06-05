@@ -18,7 +18,7 @@ package vsql_engine
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
-	"github.com/wojnosystems/vsql/param"
+	"github.com/wojnosystems/vsql/vparam"
 	"github.com/wojnosystems/vsql_engine/engine_context"
 	"testing"
 )
@@ -259,7 +259,7 @@ var allMWNestCounts = map[string]int{
 
 // executeAllCallbacksNest triggers every single middleware. Should generate allMWNestCounts
 func executeAllCallbacksNest(e MultiTXer) {
-	p := param.New("Some Query")
+	p := vparam.New("Some Query")
 	ctx := context.Background()
 	_ = e.Ping(ctx)
 	{
