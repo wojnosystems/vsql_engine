@@ -31,10 +31,10 @@ type statement struct {
 }
 
 // Query see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
-func (m *statement) Query(ctx context.Context, query vparam.Parameterer) (rRows vrows.Rowser, err error) {
+func (m *statement) Query(ctx context.Context, parameterer vparam.Parameterer) (rRows vrows.Rowser, err error) {
 	c := engine_context.NewStatementQuery()
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
-	c.SetQuery(query)
+	c.SetParameterer(parameterer)
 	c.SetStatement(m.stmt)
 	m.queryEngineFactory.statementQueryMW.PerformMiddleware(ctx, c)
 	r := &rows{
@@ -45,20 +45,20 @@ func (m *statement) Query(ctx context.Context, query vparam.Parameterer) (rRows 
 }
 
 // Insert see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
-func (m *statement) Insert(ctx context.Context, query vparam.Parameterer) (res vresult.InsertResulter, err error) {
+func (m *statement) Insert(ctx context.Context, parameterer vparam.Parameterer) (res vresult.InsertResulter, err error) {
 	c := engine_context.NewStatementInsertQuery()
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
-	c.SetQuery(query)
+	c.SetParameterer(parameterer)
 	c.SetStatement(m.stmt)
 	m.queryEngineFactory.statementInsertQueryMW.PerformMiddleware(ctx, c)
 	return c.InsertResult(), c.Error()
 }
 
 // Exec see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
-func (m *statement) Exec(ctx context.Context, query vparam.Parameterer) (res vresult.Resulter, err error) {
+func (m *statement) Exec(ctx context.Context, parameterer vparam.Parameterer) (res vresult.Resulter, err error) {
 	c := engine_context.NewStatementExecQuery()
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
-	c.SetQuery(query)
+	c.SetParameterer(parameterer)
 	c.SetStatement(m.stmt)
 	m.queryEngineFactory.statementExecQueryMW.PerformMiddleware(ctx, c)
 	return c.Result(), c.Error()

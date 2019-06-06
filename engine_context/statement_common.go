@@ -16,6 +16,7 @@
 package engine_context
 
 import (
+	"github.com/wojnosystems/vsql/vparam"
 	"github.com/wojnosystems/vsql/vstmt"
 )
 
@@ -23,6 +24,8 @@ type statementCommoner interface {
 	Er
 	SetStatement(statementer vstmt.Statementer)
 	Statement() vstmt.Statementer
+	SetParameterer(parameterer vparam.Parameterer)
+	Parameterer() vparam.Parameterer
 }
 
 func newStatementCommon() *statementCommon {
@@ -33,7 +36,8 @@ func newStatementCommon() *statementCommon {
 
 type statementCommon struct {
 	*contextBase
-	statement vstmt.Statementer
+	statement   vstmt.Statementer
+	parameterer vparam.Parameterer
 }
 
 func (c *statementCommon) SetStatement(s vstmt.Statementer) {
@@ -42,4 +46,12 @@ func (c *statementCommon) SetStatement(s vstmt.Statementer) {
 
 func (c statementCommon) Statement() vstmt.Statementer {
 	return c.statement
+}
+
+func (c *statementCommon) SetParameterer(parameterer vparam.Parameterer) {
+	c.parameterer = parameterer
+}
+
+func (c statementCommon) Parameterer() vparam.Parameterer {
+	return c.parameterer
 }

@@ -34,12 +34,11 @@ type txStatement struct {
 }
 
 // Query see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
-func (m *txStatement) Query(ctx context.Context, query vparam.Parameterer) (rRows vrows.Rowser, err error) {
+func (m *txStatement) Query(ctx context.Context, parameterer vparam.Parameterer) (rRows vrows.Rowser, err error) {
 	c := engine_context.NewStatementQuery()
 	c.SetStatement(m.preparer.Statement())
-	c.SetQuery(query)
+	c.SetParameterer(parameterer)
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
-	c.SetQuery(query)
 	m.queryEngineFactory.statementQueryMW.PerformMiddleware(ctx, c)
 	r := &rows{
 		rows:               c.Rows(),
@@ -49,23 +48,21 @@ func (m *txStatement) Query(ctx context.Context, query vparam.Parameterer) (rRow
 }
 
 // Insert see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
-func (m *txStatement) Insert(ctx context.Context, query vparam.Parameterer) (res vresult.InsertResulter, err error) {
+func (m *txStatement) Insert(ctx context.Context, parameterer vparam.Parameterer) (res vresult.InsertResulter, err error) {
 	c := engine_context.NewStatementInsertQuery()
 	c.SetStatement(m.preparer.Statement())
-	c.SetQuery(query)
+	c.SetParameterer(parameterer)
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
-	c.SetQuery(query)
 	m.queryEngineFactory.statementInsertQueryMW.PerformMiddleware(ctx, c)
 	return c.InsertResult(), c.Error()
 }
 
 // Exec see github.com/wojnosystems/vsql/vstmt/statements.go#Statementer
-func (m *txStatement) Exec(ctx context.Context, query vparam.Parameterer) (res vresult.Resulter, err error) {
+func (m *txStatement) Exec(ctx context.Context, parameterer vparam.Parameterer) (res vresult.Resulter, err error) {
 	c := engine_context.NewStatementExecQuery()
 	c.SetStatement(m.preparer.Statement())
-	c.SetQuery(query)
+	c.SetParameterer(parameterer)
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
-	c.SetQuery(query)
 	m.queryEngineFactory.statementExecQueryMW.PerformMiddleware(ctx, c)
 	return c.Result(), c.Error()
 }
