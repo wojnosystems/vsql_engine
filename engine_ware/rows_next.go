@@ -21,7 +21,7 @@ import (
 	"github.com/wojnosystems/vsql_engine/engine_context"
 )
 
-type RowsNextHandler func(ctx context.Context, c engine_context.Rowser)
+type RowsNextHandler func(ctx context.Context, c engine_context.RowsNexter)
 
 // Middleware for begin
 type RowsNextAdder interface {
@@ -68,6 +68,6 @@ func (b RowsNextMW) Copy() *RowsNextMW {
 
 func rowsNextPackageFunc(w RowsNextHandler) engine_context.MiddlewareFunc {
 	return func(ctx context.Context, er engine_context.Er) {
-		w(ctx, er.(engine_context.Rowser))
+		w(ctx, er.(engine_context.RowsNexter))
 	}
 }

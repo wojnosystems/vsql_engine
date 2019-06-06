@@ -40,7 +40,7 @@ func TestEngine_Query(t *testing.T) {
 		t.Error("expected parameters to be passed")
 	}
 
-	engine.RowsNextMW().Append(func(ctx context.Context, c engine_context.Rowser) {
+	engine.RowsNextMW().Append(func(ctx context.Context, c engine_context.RowsNexter) {
 		actualRows = c.Rows()
 		c.Next(ctx)
 	})

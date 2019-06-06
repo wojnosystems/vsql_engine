@@ -54,7 +54,7 @@ func TestEngine_Prepare(t *testing.T) {
 		t.Error("expected actual statement to be set")
 	}
 
-	engine.RowsNextMW().Append(func(ctx context.Context, c engine_context.Rowser) {
+	engine.RowsNextMW().Append(func(ctx context.Context, c engine_context.RowsNexter) {
 		actualRows = c.Rows()
 		c.Next(ctx)
 	})

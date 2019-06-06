@@ -161,7 +161,7 @@ func appendToAllNoNest(e SingleTXer, f func(named string)) {
 		f("RollbackMW")
 		c.Next(ctx)
 	})
-	e.RowsNextMW().Append(func(ctx context.Context, c engine_context.Rowser) {
+	e.RowsNextMW().Append(func(ctx context.Context, c engine_context.RowsNexter) {
 		f("RowsNextMW")
 		c.Next(ctx)
 	})
@@ -224,7 +224,7 @@ func prependToAllNoNest(e SingleTXer, f func(named string)) {
 		f("RollbackMW")
 		c.Next(ctx)
 	})
-	e.RowsNextMW().Prepend(func(ctx context.Context, c engine_context.Rowser) {
+	e.RowsNextMW().Prepend(func(ctx context.Context, c engine_context.RowsNexter) {
 		f("RowsNextMW")
 		c.Next(ctx)
 	})
