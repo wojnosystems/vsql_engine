@@ -30,6 +30,7 @@ type commonBeginner struct {
 func newCommonBeginner() *commonBeginner {
 	return &commonBeginner{
 		contextBase: newContextBase(),
+		txnOptions:  &vtxn.TxOption{},
 	}
 }
 

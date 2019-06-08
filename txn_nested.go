@@ -70,7 +70,7 @@ func (m *nestedTx) Rollback() error {
 // Query nonNestedTx github.com/wojnosystems/vsql/strategy.go#QueryExecer
 func (m *nestedTx) Query(ctx context.Context, query vparam.Queryer) (rRows vrows.Rowser, err error) {
 	c := engine_context.NewQuery()
-	c.SetQueryExecTransactioner(m)
+	c.SetQueryExecTransactioner(m.beginnerNestedContext.QueryExecNestedTransactioner())
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
 	c.SetQuery(query)
 	m.queryEngineFactory.queryMW.PerformMiddleware(ctx, c)
@@ -84,7 +84,7 @@ func (m *nestedTx) Query(ctx context.Context, query vparam.Queryer) (rRows vrows
 // Insert see github.com/wojnosystems/vsql/strategy.go#QueryExecer
 func (m *nestedTx) Insert(ctx context.Context, query vparam.Queryer) (res vresult.InsertResulter, err error) {
 	c := engine_context.NewInsertQuery()
-	c.SetQueryExecTransactioner(m)
+	c.SetQueryExecTransactioner(m.beginnerNestedContext.QueryExecNestedTransactioner())
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
 	c.SetQuery(query)
 	m.queryEngineFactory.insertQueryMW.PerformMiddleware(ctx, c)
@@ -94,7 +94,7 @@ func (m *nestedTx) Insert(ctx context.Context, query vparam.Queryer) (res vresul
 // Exec see github.com/wojnosystems/vsql/strategy.go#QueryExecer
 func (m *nestedTx) Exec(ctx context.Context, query vparam.Queryer) (res vresult.Resulter, err error) {
 	c := engine_context.NewExecQuery()
-	c.SetQueryExecTransactioner(m)
+	c.SetQueryExecTransactioner(m.beginnerNestedContext.QueryExecNestedTransactioner())
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
 	c.SetQuery(query)
 	m.queryEngineFactory.execQueryMW.PerformMiddleware(ctx, c)
@@ -104,7 +104,7 @@ func (m *nestedTx) Exec(ctx context.Context, query vparam.Queryer) (res vresult.
 // Prepare see github.com/wojnosystems/vsql/vstmt/statements.go#Preparer
 func (m *nestedTx) Prepare(ctx context.Context, query vparam.Queryer) (stmtr vstmt.Statementer, err error) {
 	c := engine_context.NewPreparer()
-	c.SetQueryExecTransactioner(m)
+	c.SetQueryExecTransactioner(m.beginnerNestedContext.QueryExecNestedTransactioner())
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.queryEngineFactory.middlewareContext)
 	c.SetQuery(query)
 	m.queryEngineFactory.statementPrepareMW.PerformMiddleware(ctx, c)

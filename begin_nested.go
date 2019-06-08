@@ -46,6 +46,9 @@ func (m *engineNest) BeginNestedMW() engine_ware.BeginNestedAdder {
 func (m *engineNest) Begin(ctx context.Context, txOp vtxn.TxOptioner) (n vsql.QueryExecNestedTransactioner, err error) {
 	c := engine_context.NewNestedBeginner()
 	c.(engine_context.WithMiddlewarer).ShallowCopyFrom(m.engineQuery.middlewareContext)
+	if txOp == nil {
+		txOp = &vtxn.TxOption{}
+	}
 	c.SetTxOptions(txOp)
 	m.beginMW.PerformMiddleware(ctx, c)
 	s := &nestedTx{
